@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "finalerts"
+version = "0.1.0"
+description = "A python backend for generating some alerts for personal investing"
+authors = ["Sr-vZ"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi="^0.111.0"
+requests = "^2.32.3"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
