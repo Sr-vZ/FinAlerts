@@ -2,6 +2,7 @@ from typing import Union
 
 from fastapi import FastAPI
 import requests
+from datetime import datetime
 
 app = FastAPI()
 
@@ -14,6 +15,11 @@ def read_root():
 def read_item(item_id: int, q: Union[str, None] = None):
     return {"item_id": item_id, "q": q}
 
+@app.get("/nse_data/")
+async def get_nse_data(symbol: str, startdate: str, enddate: str, interval: int):
+    if symbol == None:
+        symbol = "nifty50"
+    retun fetch_nse_data(symbol,startdate,enddate,interval)
 
 
 
@@ -45,7 +51,7 @@ def fetch_nse_data(str: symbol, startdate, enddate, interval, period)-> dict{
     # }
     
     if symbol == None:
-        symbol = nifty50
+        symbol = "nifty50"
     
     if startdate == None:
         startdate = 0
@@ -64,6 +70,9 @@ def fetch_nse_data(str: symbol, startdate, enddate, interval, period)-> dict{
     }
 
     response = requests.post('https://charting.nseindia.com//Charts/ChartData/', headers=headers, json=json_data)
+
+    return response
+                                
     
 }
 
