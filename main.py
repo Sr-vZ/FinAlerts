@@ -2,7 +2,8 @@ from typing import Union
 
 from fastapi import FastAPI
 import requests
-from datetime import datetime
+from datetime import datetime as dt
+import json
 
 app = FastAPI()
 
@@ -19,7 +20,7 @@ def read_item(item_id: int, q: Union[str, None] = None):
 async def get_nse_data(symbol: str, startdate: str, enddate: str, interval: int):
     if symbol == None:
         symbol = "nifty50"
-    retun fetch_nse_data(symbol,startdate,enddate,interval)
+    return fetch_nse_data(symbol,startdate,enddate,interval)
 
 
 
@@ -38,7 +39,7 @@ headers = {
 }
 
 
-def fetch_nse_data(str: symbol, startdate, enddate, interval, period)-> dict{
+def fetch_nse_data(symbol, startdate, enddate, interval=5, period='I'):
     
     # json_data = {
     #     'exch': 'N',
@@ -57,23 +58,30 @@ def fetch_nse_data(str: symbol, startdate, enddate, interval, period)-> dict{
         startdate = 0
         
     if enddate == None:
-        enddate = 
-    
+        enddate = dt.now()
+   
+    startdate = dt.strptime(startdate,'%d-%m-%Y').timestamp()
+    enddate = dt.strptime(enddate,'%d-%m-%Y').timestamp()
+
+    print(startdate)
+    print(enddate)
     data = {
         'exch': 'N',
         'tradingSymbol': symbol,
-        'fromDate': startdate,
-        'toDate': enddate,
-        'timeInterval': 5,
+        'fromDate': int(startdate),
+        'toDate': int(enddate),
+        'timeInterval': interval,
         'chartPeriod': 'I',
         'chartStart': 0,      
     }
 
-    response = requests.post('https://charting.nseindia.com//Charts/ChartData/', headers=headers, json=json_data)
+    print(data)
 
-    return response
+    response = requests.post('https://charting.nseindia.com//Charts/ChartData/', headers=headers, json=data)
+    print(response.json())
+    return response.json()
                                 
     
-}
+
 
 
