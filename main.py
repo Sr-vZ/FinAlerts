@@ -2,8 +2,10 @@ from typing import Union
 
 from fastapi import FastAPI
 import requests
-from datetime import datetime as dt
 import json
+from datetime import datetime as datetime
+from datetime import timedelta as timedelta
+import pandas as pd
 
 app = FastAPI()
 
@@ -17,11 +19,14 @@ def read_item(item_id: int, q: Union[str, None] = None):
     return {"item_id": item_id, "q": q}
 
 @app.get("/nse_data/")
-async def get_nse_data(symbol: str, startdate: str, enddate: str, interval: int):
+async def get_nse_data(symbol: str, startdate: str=None, enddate: str=None, interval: int=None):
     if symbol == None:
-        symbol = "nifty50"
+        symbol = "TCS-EQ"
     return fetch_nse_data(symbol,startdate,enddate,interval)
 
+@app.get("/scripcodes/")
+def scripCode():
+    return get_scrip_code()
 
 
 headers = {
@@ -39,7 +44,7 @@ headers = {
 }
 
 
-def fetch_nse_data(symbol, startdate, enddate, interval=5, period='I'):
+def fetch_nse_data(symbol, startdate, enddate, interval=5, period ="I")-> json:
     
     # json_data = {
     #     'exch': 'N',
@@ -52,19 +57,17 @@ def fetch_nse_data(symbol, startdate, enddate, interval=5, period='I'):
     # }
     
     if symbol == None:
-        symbol = "nifty50"
+        symbol = "TCS-EQ"
     
     if startdate == None:
-        startdate = 0
-        
+        startdate = datetime.now() - timedelta(days=7)
+        startdate = startdate.strftime('%d-%m-%Y')
     if enddate == None:
-        enddate = dt.now()
+        enddate = datetime.now().strftime('%d-%m-%Y')
    
-    startdate = dt.strptime(startdate,'%d-%m-%Y').timestamp()
-    enddate = dt.strptime(enddate,'%d-%m-%Y').timestamp()
+    startdate = datetime.strptime(startdate,'%d-%m-%Y').timestamp()
+    enddate = datetime.strptime(enddate,'%d-%m-%Y').timestamp()
 
-    print(startdate)
-    print(enddate)
     data = {
         'exch': 'N',
         'tradingSymbol': symbol,
@@ -75,13 +78,44 @@ def fetch_nse_data(symbol, startdate, enddate, interval=5, period='I'):
         'chartStart': 0,      
     }
 
-    print(data)
-
     response = requests.post('https://charting.nseindia.com//Charts/ChartData/', headers=headers, json=data)
-    print(response.json())
+
     return response.json()
-                                
+
+def get_scrip_code(symbol=None) -> int:
+    response = requests.get('https://charting.nseindia.com//Charts/GetEQMasters', headers=headers)
+    print(response.text)
+    return response.text
+
+def fetch_hist_nse_data(symbol, startdate, enddate, interval=5, period ="I")-> json:
     
+   
+    if symbol == None:
+        symbol = "TCS-EQ"
+    
+    if startdate == None:
+        startdate = datetime.now() - timedelta(days=7)
+        startdate = startdate.strftime('%d-%m-%Y')
+    if enddate == None:
+        enddate = datetime.now().strftime('%d-%m-%Y')
+   
+    startdate = datetime.strptime(startdate,'%d-%m-%Y').timestamp()
+    enddate = datetime.strptime(enddate,'%d-%m-%Y').timestamp()
 
+    data = {
+        'exch': 'N',
+        'instrType': 'C',
+        'tradingSymbol': symbol,
+        'fromDate': int(startdate),
+        'toDate': int(enddate),
+        'timeInterval': interval,
+        'chartPeriod': 'I',
+        'chartStart': 0,      
+        'scripCode': 26000,
+        'ulToken': 26000,
+    }
 
+    response = requests.post('https://charting.nseindia.com//Charts/symbolhistoricaldata/', headers=headers, json=data)
+
+    return response.json()
 
