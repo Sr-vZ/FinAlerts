@@ -5,6 +5,7 @@ import requests
 import json
 from datetime import datetime as datetime
 from datetime import timedelta as timedelta
+from io import StringIO
 import pandas as pd
 
 app = FastAPI()
@@ -25,8 +26,8 @@ async def get_nse_data(symbol: str, startdate: str=None, enddate: str=None, inte
     return fetch_nse_data(symbol,startdate,enddate,interval)
 
 @app.get("/scripcodes/")
-def scripCode():
-    return get_scrip_code()
+def scripCode(symbol: str=None):
+    return get_scrip_code(symbol)
 
 
 headers = {
@@ -82,10 +83,16 @@ def fetch_nse_data(symbol, startdate, enddate, interval=5, period ="I")-> json:
 
     return response.json()
 
-def get_scrip_code(symbol=None) -> int:
+def get_scrip_code(symbol=None) -> json:
     response = requests.get('https://charting.nseindia.com//Charts/GetEQMasters', headers=headers)
-    print(response.text)
-    return response.text
+    # print(response.text)
+    csv_str = StringIO(response.text)
+    df = pd.read_csv(csv_str,sep="|")
+    # print(df)
+    if symbol in df.values:
+        df = df[df['TradingSymbol']==symbol]
+        # return json.loads(df[].to_json(orient='records'))
+    return json.loads(df.to_json(orient='records'))
 
 def fetch_hist_nse_data(symbol, startdate, enddate, interval=5, period ="I")-> json:
     
