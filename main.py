@@ -1,8 +1,11 @@
 from typing import Union
 
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+
 import requests
 import json
+import os
 from datetime import datetime as datetime
 from datetime import timedelta as timedelta
 from io import StringIO
@@ -20,10 +23,11 @@ def read_item(item_id: int, q: Union[str, None] = None):
     return {"item_id": item_id, "q": q}
 
 @app.get("/nse_data/")
-async def get_nse_data(symbol: str, startdate: str=None, enddate: str=None, interval: int=None):
+async def get_nse_data(symbol: str, startdate: str=None, enddate: str=None, interval: int=5):
     if symbol == None:
         symbol = "TCS-EQ"
-    return fetch_nse_data(symbol,startdate,enddate,interval)
+    return fetch_hist_nse_data(symbol,startdate,enddate,interval)
+    
 
 @app.get("/scripcodes/")
 def scripCode(symbol: str=None):
@@ -84,17 +88,23 @@ def fetch_nse_data(symbol, startdate, enddate, interval=5, period ="I")-> json:
     return response.json()
 
 def get_scrip_code(symbol=None) -> json:
-    response = requests.get('https://charting.nseindia.com//Charts/GetEQMasters', headers=headers)
-    # print(response.text)
-    csv_str = StringIO(response.text)
-    df = pd.read_csv(csv_str,sep="|")
-    # print(df)
+    csv_filepath = './temp/scripcode.csv'
+    if os.path.exists(csv_filepath):
+        df = pd.read_csv(csv_filepath,sep=",")  
+    else:
+        response = requests.get('https://charting.nseindia.com//Charts/GetEQMasters', headers=headers)
+
+        csv_str = StringIO(response.text)
+        df = pd.read_csv(csv_str,sep="|")
+    
+        df.to_csv(csv_filepath, index=False)  
+    
     if symbol in df.values:
         df = df[df['TradingSymbol']==symbol]
-        # return json.loads(df[].to_json(orient='records'))
+    
     return json.loads(df.to_json(orient='records'))
 
-def fetch_hist_nse_data(symbol, startdate, enddate, interval=5, period ="I")-> json:
+def fetch_hist_nse_data(symbol, startdate, enddate, interval: int=5, period ="I")-> json:
     
    
     if symbol == None:
@@ -108,21 +118,28 @@ def fetch_hist_nse_data(symbol, startdate, enddate, interval=5, period ="I")-> j
    
     startdate = datetime.strptime(startdate,'%d-%m-%Y').timestamp()
     enddate = datetime.strptime(enddate,'%d-%m-%Y').timestamp()
+    
+    scrip_code = get_scrip_code(symbol)[0]['ScripCode']
 
     data = {
         'exch': 'N',
         'instrType': 'C',
-        'tradingSymbol': symbol,
+        # 'tradingSymbol': symbol,
         'fromDate': int(startdate),
         'toDate': int(enddate),
         'timeInterval': interval,
         'chartPeriod': 'I',
         'chartStart': 0,      
-        'scripCode': 26000,
-        'ulToken': 26000,
+        'scripCode': scrip_code,
+        'ulToken': scrip_code,
     }
 
     response = requests.post('https://charting.nseindia.com//Charts/symbolhistoricaldata/', headers=headers, json=data)
 
     return response.json()
 
+
+app_ui = FastAPI(title="FinAlerts UI")
+
+# app.mount("/api", api_app)
+app.mount("/", StaticFiles(directory="ui", html=True), name="ui")
