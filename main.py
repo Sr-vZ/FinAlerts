@@ -10,6 +10,9 @@ from datetime import datetime as datetime
 from datetime import timedelta as timedelta
 from io import StringIO
 import pandas as pd
+import uvicorn
+import sqlite3
+import logging 
 
 app = FastAPI()
 
@@ -138,8 +141,61 @@ def fetch_hist_nse_data(symbol, startdate, enddate, interval: int=5, period ="I"
 
     return response.json()
 
+def initialize_db(db_name, table_name, columns, values):
+    """
+    Initializes a local SQLite database and populates a table with the given values.
+
+    Args:
+        db_name (str): The name of the database file.
+        table_name (str): The name of the table to create.
+        columns (list): A list of column names.
+        values (list): A list of tuples, each representing a row of values.
+
+    Returns:
+        None
+    """
+
+    if os.path.exists(db_name):
+        print(f"Database '{db_name}' already exists. Using existing database.")
+        conn = sqlite3.connect(db_name)
+    else:
+        print(f"Creating new database '{db_name}'")
+        conn = sqlite3.connect(db_name)
+
+        # Create the table if it doesn't exist
+        cursor = conn.cursor()
+        cursor.execute(f"""
+            CREATE TABLE IF NOT EXISTS {table_name} (
+                {', '.join(f'{col} TEXT' for col in columns)}
+            )
+        """)
+
+        # Insert values into the table
+        cursor.executemany(f"""
+            INSERT INTO {table_name} VALUES ({', '.join(['?'] * len(columns))})
+        """, values)
+
+        conn.commit()
+    conn.close()
+
+def init_local_cache():
+    db_name = "nse_local_cache.db"
+    table_name = "eq_scrip_codes"
+    # columns = ["ts","open","high","low","close"]
+    columns = ["ScripCode","TradingSymbol","Description","InstrumentType"]
+    
+    response = requests.get('https://charting.nseindia.com//Charts/GetEQMasters', headers=headers)
+    csv_str = StringIO(response.text)
+    df = pd.read_csv(csv_str,sep="|")
+    values = df.values
+    initialize_db(db_name, table_name, columns, values)
+
 
 app_ui = FastAPI(title="FinAlerts UI")
 
 # app.mount("/api", api_app)
 app.mount("/", StaticFiles(directory="ui", html=True), name="ui")
+
+if __name__ == "__main__":
+    init_local_cache()
+    uvicorn.run(app, host="0.0.0.0", port=8000)
