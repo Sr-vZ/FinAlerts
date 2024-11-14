@@ -12,7 +12,20 @@ from io import StringIO
 import pandas as pd
 import uvicorn
 import sqlite3
-import logging 
+import logging
+
+def create_logger(name, log_file, level=logging.INFO):
+    formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+
+    handler = logging.FileHandler(log_file)
+    handler.setFormatter(formatter)
+
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+    logger.addHandler(handler)
+    return logger 
+
+logger = create_logger('finalerts', 'finalerts.log', logging.DEBUG)
 
 app = FastAPI()
 
@@ -35,6 +48,9 @@ async def get_nse_data(symbol: str, startdate: str=None, enddate: str=None, inte
 @app.get("/scripcodes/")
 def scripCode(symbol: str=None):
     return get_scrip_code(symbol)
+
+
+
 
 
 headers = {
@@ -91,16 +107,22 @@ def fetch_nse_data(symbol, startdate, enddate, interval=5, period ="I")-> json:
     return response.json()
 
 def get_scrip_code(symbol=None) -> json:
-    csv_filepath = './temp/scripcode.csv'
-    if os.path.exists(csv_filepath):
-        df = pd.read_csv(csv_filepath,sep=",")  
+    # csv_filepath = './temp/scripcode.csv'
+    nse_local_cache = "./nse_local_cache.db"
+    conn = sqlite3.connect(nse_local_cache)
+    if os.path.exists(nse_local_cache):
+        # df = pd.read_csv(csv_filepath,sep=",")  
+        df = pd.read_sql_query("SELECT * from eq_scrip_codes", conn)
     else:
-        response = requests.get('https://charting.nseindia.com//Charts/GetEQMasters', headers=headers)
+        # response = requests.get('https://charting.nseindia.com//Charts/GetEQMasters', headers=headers)
 
-        csv_str = StringIO(response.text)
-        df = pd.read_csv(csv_str,sep="|")
+        # csv_str = StringIO(response.text)
+        # df = pd.read_csv(csv_str,sep="|")
     
-        df.to_csv(csv_filepath, index=False)  
+        # df.to_csv(csv_filepath, index=False)
+        logger.warning(f"{nse_local_cache} missing! rebuilding local cache...")
+        init_local_cache()  
+        df = pd.read_sql_query("SELECT * from eq_scrip_codes", conn)
     
     if symbol in df.values:
         df = df[df['TradingSymbol']==symbol]
@@ -156,10 +178,10 @@ def initialize_db(db_name, table_name, columns, values):
     """
 
     if os.path.exists(db_name):
-        print(f"Database '{db_name}' already exists. Using existing database.")
+        logging.info(f"Database '{db_name}' already exists. Using existing database.")
         conn = sqlite3.connect(db_name)
     else:
-        print(f"Creating new database '{db_name}'")
+        logging.info(f"Creating new database '{db_name}'")
         conn = sqlite3.connect(db_name)
 
         # Create the table if it doesn't exist
