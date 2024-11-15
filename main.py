@@ -1,7 +1,8 @@
 from typing import Union
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 
 import requests
 import json
@@ -29,23 +30,26 @@ logger = create_logger('finalerts', 'finalerts.log', logging.DEBUG)
 
 app = FastAPI()
 
+templates = Jinja2Templates(directory="ui")
+
 @app.get("/")
-def read_root():
-    return {"Hello": "World"}
+def dashboard(request: Request):
+    # return {"Hello": "World"}
+    return templates.TemplateResponse("dashboard.html",{"request":request})
 
 
-@app.get("/items/{item_id}")
+@app.get("/api/items/{item_id}")
 def read_item(item_id: int, q: Union[str, None] = None):
     return {"item_id": item_id, "q": q}
 
-@app.get("/nse_data/")
+@app.get("/api/nse_data/")
 async def get_nse_data(symbol: str, startdate: str=None, enddate: str=None, interval: int=5):
     if symbol == None:
         symbol = "TCS-EQ"
     return fetch_hist_nse_data(symbol,startdate,enddate,interval)
     
 
-@app.get("/scripcodes/")
+@app.get("/api/scripcodes/")
 def scripCode(symbol: str=None):
     return get_scrip_code(symbol)
 
@@ -103,6 +107,7 @@ def fetch_nse_data(symbol, startdate, enddate, interval=5, period ="I")-> json:
     }
 
     response = requests.post('https://charting.nseindia.com//Charts/ChartData/', headers=headers, json=data)
+    logging.info(f"Intraday response for {symbol} {response.json()}")
 
     return response.json()
 
@@ -221,3 +226,4 @@ app.mount("/", StaticFiles(directory="ui", html=True), name="ui")
 if __name__ == "__main__":
     init_local_cache()
     uvicorn.run(app, host="0.0.0.0", port=8000)
+    
