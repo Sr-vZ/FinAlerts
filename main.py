@@ -1,3 +1,4 @@
+import re
 from typing import Union
 
 from fastapi import FastAPI, Request
@@ -14,6 +15,7 @@ import pandas as pd
 import uvicorn
 import sqlite3
 import logging
+import httpx
 
 def create_logger(name, log_file, level=logging.INFO):
     formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
@@ -21,9 +23,13 @@ def create_logger(name, log_file, level=logging.INFO):
     handler = logging.FileHandler(log_file)
     handler.setFormatter(formatter)
 
+    term_handler = logging.StreamHandler()
+    term_handler.setFormatter(formatter)
+    
     logger = logging.getLogger(name)
     logger.setLevel(level)
     logger.addHandler(handler)
+    logger.addHandler(term_handler)
     return logger 
 
 logger = create_logger('finalerts', 'finalerts.log', logging.DEBUG)
@@ -31,6 +37,8 @@ logger = create_logger('finalerts', 'finalerts.log', logging.DEBUG)
 app = FastAPI()
 
 templates = Jinja2Templates(directory="ui")
+
+db_name = "nse_local_cache.db"
 
 @app.get("/")
 def dashboard(request: Request):
@@ -54,7 +62,10 @@ def scripCode(symbol: str=None):
     return get_scrip_code(symbol)
 
 
-
+@app.get("/api/test/")
+def nse_indices():
+    # return fetch_nse_indices_stocklist()
+    return init_nifty50_data()
 
 
 headers = {
@@ -134,8 +145,18 @@ def get_scrip_code(symbol=None) -> json:
     
     return json.loads(df.to_json(orient='records'))
 
-def fetch_hist_nse_data(symbol, startdate, enddate, interval: int=5, period ="I")-> json:
+def fetch_hist_nse_data(symbol, startdate, enddate, interval: int=5, period ="D")-> json:
+    """
+    Args:
+        period = "I" for intra "D" for daily "W" for weekly "M" for monthly
+        interval = "1,3,5,10,15,30,60" for intra
+        interval = "1" for period=["D","W","M"]
+        startdate = "dd-mm-yyyy"
+        enddate = "dd-mm-yyyy"
+    Returns:
+        json
     
+    """
    
     if symbol == None:
         symbol = "TCS-EQ"
@@ -158,7 +179,7 @@ def fetch_hist_nse_data(symbol, startdate, enddate, interval: int=5, period ="I"
         'fromDate': int(startdate),
         'toDate': int(enddate),
         'timeInterval': interval,
-        'chartPeriod': 'I',
+        'chartPeriod': period,
         'chartStart': 0,      
         'scripCode': scrip_code,
         'ulToken': scrip_code,
@@ -167,6 +188,92 @@ def fetch_hist_nse_data(symbol, startdate, enddate, interval: int=5, period ="I"
     response = requests.post('https://charting.nseindia.com//Charts/symbolhistoricaldata/', headers=headers, json=data)
 
     return response.json()
+
+
+
+def create_stock_table(conn, symbol):
+    """Creates a table for the given symbol with appropriate columns."""
+    cursor = conn.cursor()
+    cursor.execute(f"""CREATE TABLE IF NOT EXISTS {symbol} (
+        ts INTEGER PRIMARY KEY,
+        open REAL,
+        high REAL,
+        low REAL,
+        close REAL,
+        volume INTEGER
+    )""")
+    logger.info(f"{symbol} Table created")
+    conn.commit()
+
+def insert_stock_data(conn, symbol, data):
+    """Inserts data into the specified table."""
+    cursor = conn.cursor()
+    for row in data:
+        ts, open_price, high_price, low_price, close_price, volume = row
+        cursor.execute(f"""
+            INSERT OR REPLACE INTO {symbol} (ts, open, high, low, close, volume)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (ts, open_price, high_price, low_price, close_price, volume))
+    logger.info(f"Data {data} inserted to {symbol} Table")
+    conn.commit()
+
+
+def init_nifty50_data():
+    nifty50list = "https://nsearchives.nseindia.com/content/indices/ind_nifty50list.csv"
+    temp_filepath = "./temp/ind_nifty50list.csv"
+    res = httpx.get(nifty50list, timeout=20, headers=headers)
+    with open(temp_filepath, "wb") as f:
+        f.write(res.content)
+    
+    df = pd.read_csv(temp_filepath)
+    nifty_50_data =[]
+    st_date = datetime.now()- timedelta(days=30)
+    end_date = datetime.now()
+    st_date = st_date.strftime('%d-%m-%Y')
+    end_date = end_date.strftime('%d-%m-%Y')
+    for symbol in df["Symbol"]:
+        symbol = re.sub(r'[\W_]+','_',symbol)
+        nifty_50_data.append({
+            symbol:fetch_hist_nse_data(symbol=f"{symbol}-EQ", startdate=st_date, enddate=end_date, interval=1, period="D")
+        })
+        
+    # return json.loads(df["Symbol"].to_json())
+    conn = sqlite3.connect(db_name)
+    # for symbol, stock_data in nifty_50_data.items():
+    for item in nifty_50_data:
+        for symbol, stock_data in item.items():
+            create_stock_table(conn, symbol)
+            timestamp_data = stock_data['t']
+            open_data = stock_data['o']
+            high_data = stock_data['h']
+            low_data = stock_data['l']
+            close_data = stock_data['c']
+            volume_data = stock_data['v']
+
+            data_to_insert = zip(timestamp_data, open_data, high_data, low_data, close_data, volume_data)
+            insert_stock_data(conn, symbol, data_to_insert)
+
+    conn.close()
+    
+    return nifty_50_data
+
+
+def fetch_nse_indices_stocklist(index='NIFTY 50'):
+    indices = ["NIFTY 50", "NIFTY NEXT 50", "NIFTY 100", "NIFTY 200", "NIFTY MIDCAP 50"]
+    if not index in indices:
+        logging.error(f"{index} is not valid index. Select among {indices}")
+        return None
+    params = {
+    'index': index,
+    }
+
+    headers['origin'] = "https://www.nseindia.com/"
+    response = requests.get('https://www.nseindia.com/api/equity-stockIndices', params=params, headers=headers)
+    logger.info(response)
+    # df = pd.read_json(response.json())
+    return json.loads(response.json())
+    
+    
 
 def initialize_db(db_name, table_name, columns, values):
     """
@@ -216,6 +323,8 @@ def init_local_cache():
     df = pd.read_csv(csv_str,sep="|")
     values = df.values
     initialize_db(db_name, table_name, columns, values)
+    table_name = "nifty_50_daily"
+    columns = ["TS","TradingSymbol","Open","High","Low","Close"]
 
 
 app_ui = FastAPI(title="FinAlerts UI")

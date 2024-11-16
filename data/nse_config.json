@@ -1,0 +1,6 @@
+{
+    "indicies": ["NIFTY 50","NIFTY 100", "NIFTY 500"],
+    "index_stock_composition":{
+        "NIFTY 50": []
+    }
+}
