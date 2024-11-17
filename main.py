@@ -45,6 +45,11 @@ def dashboard(request: Request):
     # return {"Hello": "World"}
     return templates.TemplateResponse("dashboard.html",{"request":request})
 
+@app.get("/alerts")
+def alerts(request: Request):
+    # return {"Hello": "World"}
+    return templates.TemplateResponse("dashboard.html",{"request":request})
+
 
 @app.get("/api/items/{item_id}")
 def read_item(item_id: int, q: Union[str, None] = None):
@@ -145,6 +150,15 @@ def get_scrip_code(symbol=None) -> json:
     
     return json.loads(df.to_json(orient='records'))
 
+
+def fetch_local_nifty_data(symbol: str, startdate, enddate) -> json:
+    conn = sqlite3.connect(db_name)
+    try:
+        df = pd.read_sql_query("SELECT * from {symbol}", conn)
+    except:
+        fetch_hist_nse_data(symbol,startdate,enddate,interval=1)
+    
+
 def fetch_hist_nse_data(symbol, startdate, enddate, interval: int=5, period ="D")-> json:
     """
     Args:
@@ -214,7 +228,7 @@ def insert_stock_data(conn, symbol, data):
             INSERT OR REPLACE INTO {symbol} (ts, open, high, low, close, volume)
             VALUES (?, ?, ?, ?, ?, ?)
         """, (ts, open_price, high_price, low_price, close_price, volume))
-    logger.info(f"Data {data} inserted to {symbol} Table")
+    logger.info(f"Data inserted to {symbol} Table")
     conn.commit()
 
 
@@ -227,7 +241,7 @@ def init_nifty50_data():
     
     df = pd.read_csv(temp_filepath)
     nifty_50_data =[]
-    st_date = datetime.now()- timedelta(days=30)
+    st_date = datetime.now()- timedelta(days=365)
     end_date = datetime.now()
     st_date = st_date.strftime('%d-%m-%Y')
     end_date = end_date.strftime('%d-%m-%Y')
@@ -254,8 +268,8 @@ def init_nifty50_data():
             insert_stock_data(conn, symbol, data_to_insert)
 
     conn.close()
-    
-    return nifty_50_data
+    logger.info(f"local cache initialized!")
+    # return nifty_50_data
 
 
 def fetch_nse_indices_stocklist(index='NIFTY 50'):
@@ -323,8 +337,9 @@ def init_local_cache():
     df = pd.read_csv(csv_str,sep="|")
     values = df.values
     initialize_db(db_name, table_name, columns, values)
-    table_name = "nifty_50_daily"
-    columns = ["TS","TradingSymbol","Open","High","Low","Close"]
+    init_nifty50_data()
+    
+
 
 
 app_ui = FastAPI(title="FinAlerts UI")
