@@ -52,6 +52,12 @@ async def index(request: Request):
     return templates.TemplateResponse("index.html",
      {"request": request})
 
+@app.get("/register", response_class=HTMLResponse)
+async def index(request: Request):
+    print(app_root)
+    return templates.TemplateResponse("register.html",
+     {"request": request})
+
 app.include_router(user.router)
 app.include_router(auth.router, prefix="/auth")
 

@@ -1,48 +1,11 @@
 {% extends "base.html" %} {% block content %}
-<!-- LOGIN FORM -->
-<!-- <div id="login" class="container">
-    <div class="row">
-        <div class="row col s4">
-            <h3>Login</h3>
-        </div>
-        <form class="col s12" 
-               hx-post="/login/"
-               hx-swap="innerHTML"
-               hx-target="#login"                    
-               method="post">
-            <div class="row">
-                <div class="input-field col s12">
-                    <input id="email" type="email"  name= "email"  class="validate" required/>
-                    <label for="email">Email</label>
-                    <span
-                        class="helper-text"
-                        data-error="Please enter a valid email."
-                        data-success=""></span
-                    >
-                </div>
-            </div>
-            <div class="row">
-                <div class="input-field  col s12">
-                    <input id="password" name="password" type="password" class="validate" required/>
-                    <label for="password">Password</label>
-                </div>
-            </div>
-            <div class="row col s4">
-                <button class="btn waves-effect indigo darken-2 waves-light " type="submit" name="action">Submit
-                    <i class="material-icons right">send</i>
-                  </button>
-            </div>
-        </form>
-        <div class="row col s4">
-            <p>Don't have an account? <a href="/register/" class="">Register here.</a></p>
-        </div>
-    </div>
-</div> -->
+<!-- SIGNUP FORM -->
+<div class="bg-base-200 flex items-center justify-center min-h-screen">
 <div id="login" class="card w-96 bg-base-100 shadow-xl">
     <div class="card-body">
-        <h2 class="card-title text-2xl font-bold mb-6">Login</h2>
+        <h2 class="card-title text-2xl font-bold mb-6">Sign up</h2>
         <form               
-        hx-post="/auth/token"
+        hx-post="/auth/register"
         hx-swap="innerHTML"
         hx-target="#login"                    
         method="post">
@@ -69,16 +32,17 @@
             </div>
             <div class="form-control mt-6">
                 <button class="btn btn-primary">
-                    Login
+                    Sign up
                 </button>
             </div>
         </form>
         <div class="divider">OR</div>
         <div class="text-center">
-            <p>Don't have an account?</p>
-            <a href="/register/" class="link link-primary">Sign up now</a>
+            <p>Already have an account?</p>
+            <a href="/" class="link link-primary">Login</a>
         </div>
     </div>
+</div>
 </div>
 <!-- END LOGIN FORM -->
 {% endblock %}

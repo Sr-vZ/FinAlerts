@@ -50,6 +50,7 @@ from ..models import User
 router = APIRouter()
 
 
+
 @router.post("/register", response_model=UserResponse)
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
     db_user = get_user(db, user.username)
