@@ -40,7 +40,9 @@ from datetime import timedelta
 
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi import Depends, HTTPException, status, APIRouter
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
+
 
 from ..auth.auth_handler import authenticate_user, ACCESS_TOKEN_EXPIRE_MINUTES, create_access_token, get_user, get_password_hash
 from ..database import get_db
@@ -61,7 +63,13 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
-    return db_user
+    response = JSONResponse(
+        content={"message": "Registration successful"},
+        status_code=201
+    )
+    response.headers["HX-Redirect"] = "/"
+    return response
+    # return db_user
 
 
 @router.post("/token")
