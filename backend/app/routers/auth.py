@@ -88,4 +88,10 @@ async def login_for_access_token(
     access_token = create_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
-    return Token(access_token=access_token, token_type="bearer")
+    # return Token(access_token=access_token, token_type="bearer")
+    response = JSONResponse(
+        content={"message": "Login successful", "token": access_token},
+        status_code=200,
+    )
+    response.headers["HX-Redirect"] = "/dashboard"
+    return response
