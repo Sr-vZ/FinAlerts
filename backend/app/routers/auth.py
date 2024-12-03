@@ -93,5 +93,14 @@ async def login_for_access_token(
         content={"message": "Login successful", "token": access_token},
         status_code=200,
     )
+    response.set_cookie(
+        key="access_token",
+        value=f"Bearer {access_token}",
+        httponly=True,  # Prevents JavaScript access to cookies
+        max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,  # Cookie expiration in seconds
+        expires=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        samesite="Lax",  # Adjust according to your app's cross-site requirements
+        secure=False,  # Use True in production (requires HTTPS)
+    )
     response.headers["HX-Redirect"] = "/dashboard"
     return response

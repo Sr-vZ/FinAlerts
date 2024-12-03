@@ -11,12 +11,14 @@
 
 # main.py
 import uvicorn
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends, HTTPException, Cookie
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 import os
+
+from .auth.auth_handler import get_current_user
 
 from .routers import auth
 from .routers import user
@@ -46,6 +48,15 @@ templates = Jinja2Templates(directory=f"{app_root}/ui")
 # templates = Jinja2Templates(directory=Path(__file__).parent.parent+ "ui/")
 
 
+class RequiresLoginException(Exception):
+    pass
+
+# redirection block
+@app.exception_handler(RequiresLoginException)
+async def exception_handler(request: Request, exc: RequiresLoginException) -> Response:
+    ''' this handler allows me to route the login exception to the login page.'''
+    return RedirectResponse(url='/') 
+
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     print(app_root)
@@ -58,11 +69,44 @@ async def signup(request: Request):
     return templates.TemplateResponse("register.html",
      {"request": request})
 
+# @app.get("/dashboard", response_class=HTMLResponse)
+# async def dashboard(request: Request):
+#     print(app_root)
+
+    
+#     # print(current_user)
+#     # if current_user is None:
+#     #     return RedirectResponse(url='/')
+#     try:
+#         current_user = await get_current_user()
+#         print("test", request)
+#         return templates.TemplateResponse("dashboard.html",
+#         {"request": request})
+#     except Exception as e:
+#         print(e)
+#         raise RequiresLoginException()
+
 @app.get("/dashboard", response_class=HTMLResponse)
-async def dashboard(request: Request):
-    print(app_root)
-    return templates.TemplateResponse("dashboard.html",
-     {"request": request})
+async def dashboard(request: Request, access_token: str = Cookie(default=None)):
+    print(access_token)
+    current_user = await get_current_user(access_token=access_token)
+    print(current_user)
+    if access_token is None:
+        # Redirect to login if no token is found in cookies
+        return RedirectResponse(url="/")
+
+    try:
+        # Validate the token and fetch the user
+        current_user = await get_current_user(access_token=access_token)
+        print(current_user)
+        return templates.TemplateResponse(
+            "dashboard.html",
+            {"request": request, "user": current_user}
+        )
+    except HTTPException as e:
+        # Redirect to login on token validation failure
+        print(e)
+        return RedirectResponse(url="/")
 
 app.include_router(user.router)
 app.include_router(auth.router, prefix="/auth")
