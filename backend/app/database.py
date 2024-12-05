@@ -10,6 +10,7 @@
 # database.py
 from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session
 from .models import Base
 
 DATABASE_URL = "sqlite:///./test.db"  # You can use any database here
@@ -26,3 +27,12 @@ def get_db():
         db.close()
 
 Base.metadata.create_all(bind=engine)
+
+
+def init_tables(db: get_db)  ->  None:
+    """
+    Populate the tables with data
+    """
+    
+    pass
+    

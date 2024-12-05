@@ -101,14 +101,5 @@ async def login_for_access_token(
     #           {"request": request, "USERNAME": user.email, "success_msg": "Welcome back! ",
     #           "path_route": '/private/', "path_msg": "Go to your private page!"})
     response.set_cookie(key="Authorization", value= f"{access_token}", httponly=True)
-    # response.set_cookie(
-    #     key="access_token",
-    #     value=f"Bearer {access_token}",
-    #     httponly=True,  # Prevents JavaScript access to cookies
-    #     max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,  # Cookie expiration in seconds
-    #     expires=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-    #     samesite="Lax",  # Adjust according to your app's cross-site requirements
-    #     secure=False,  # Use True in production (requires HTTPS)
-    # )
     response.headers["HX-Redirect"] = "/dashboard"
     return response
