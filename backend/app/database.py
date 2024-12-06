@@ -11,7 +11,10 @@
 from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import Session
-from .models import Base
+from .models import Base, ScripCode, ETFList, EQList
+
+from .utils import get_scrip_data
+import pandas as pd
 
 DATABASE_URL = "sqlite:///./test.db"  # You can use any database here
 
@@ -33,6 +36,13 @@ def init_tables(db: get_db)  ->  None:
     """
     Populate the tables with data
     """
-    
-    pass
+    df = get_scrip_data
+    for row in df:
+        scriprow = ScripCode(scrip_code=row.ScripCode, 
+                             symbol=row.TradingSymbol, 
+                             description=row.Description, 
+                             instrument_type=row.InstrumentType)
+        db.add(scriprow)
+        db.commit()
+        db.refresh(scriprow)
     

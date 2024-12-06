@@ -27,15 +27,15 @@ class User(Base):
 # ScripCode,TradingSymbol,Description,InstrumentType
 class ScripCode(Base):
     __tablename__ = "scripcodes"
-    scrip_code = Column(Integer, primary_key=True, index=True)
-    trading_symbol = Column(String, unique=True, index=True)
+    scrip_code = Column(Integer, primary_key=True, unique=True, index=True)
+    symbol = Column(String, unique=True, index=True)
     description = Column(String)
     instrument_type = Column(String)
 
 # Symbol	Underlying	SecurityName	DateofListing	MarketLot	ISINNumber	FaceValue
 class ETFList(Base):
     __tablename__ = "etflist"
-    isin = Column(Integer, primary_key=True, index=True)
+    isin = Column(Integer, primary_key=True, unique=True, index=True)
     symbol = Column(String, unique=True, index=True)
     description = Column(String)
     security_name = Column(String)
@@ -46,7 +46,7 @@ class ETFList(Base):
 # SYMBOL	NAME OF COMPANY	 SERIES	 DATE OF LISTING	 PAID UP VALUE	 MARKET LOT	 ISIN NUMBER	 FACE VALUE
 class EQList(Base):
     __tablename__ = "equitylist"
-    isin = Column(Integer, primary_key=True, index=True)
+    isin = Column(Integer, primary_key=True, unique=True, index=True)
     symbol = Column(String, unique=True, index=True)
     description = Column(String)
     date_of_listing = Column(DateTime)

@@ -23,6 +23,8 @@ from .auth.auth_handler import get_current_user
 from .routers import auth
 from .routers import user
 
+from .database import init_tables
+
 app = FastAPI(debug=True)
 
 origins = [
@@ -154,4 +156,5 @@ app.include_router(user.router)
 app.include_router(auth.router, prefix="/auth")
 
 if __name__ == "__main__":
+    init_tables()
     uvicorn.run(app, host="0.0.0.0", port=8000)

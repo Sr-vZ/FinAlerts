@@ -18,6 +18,7 @@
 #     to_encode.update({"exp": expire})
 #     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
+from io import StringIO
 import httpx
 import re
 import random
