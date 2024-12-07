@@ -18,6 +18,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 import os
 
+
 from .auth.auth_handler import get_current_user
 
 from .routers import auth

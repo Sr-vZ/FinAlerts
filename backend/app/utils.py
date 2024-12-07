@@ -122,15 +122,15 @@ def get_scrip_data():
 # TODO
 def get_etflist_data():
     headers  = generate_headers(random.choice(user_agents))
-    # response = httpx.get("https://charting.nseindia.com//Charts/GetEQMasters", headers=headers)
+    response = httpx.get("https://nsearchives.nseindia.com/content/equities/eq_etfseclist.csv", headers=headers)
     csv_str = StringIO(response.text)
-    df = pd.read_csv(csv_str,sep="|")
+    df = pd.read_csv(csv_str,sep=",")
     return df
 
 # TODO
 def get_eqlist_data():
     headers  = generate_headers(random.choice(user_agents))
-    # response = httpx.get("https://charting.nseindia.com//Charts/GetEQMasters", headers=headers)
+    response = httpx.get("https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv", headers=headers)
     csv_str = StringIO(response.text)
-    df = pd.read_csv(csv_str,sep="|")
+    df = pd.read_csv(csv_str,sep=",")
     return df

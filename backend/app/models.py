@@ -41,7 +41,7 @@ class ETFList(Base):
     security_name = Column(String)
     date_of_listing = Column(DateTime)
     face_value = Column(Integer)
-    instrument_type = Column(String)    
+    market_lot = Column(String)    
 
 # SYMBOL	NAME OF COMPANY	 SERIES	 DATE OF LISTING	 PAID UP VALUE	 MARKET LOT	 ISIN NUMBER	 FACE VALUE
 class EQList(Base):
