@@ -47,45 +47,28 @@ def init_tables(db = get_db())  ->  None:
     df.to_sql("scripcodes", engine, if_exists="replace", index=False)
      
        
-    # for index, row in df.iterrows():
-    #     scriprow = ScripCode(scrip_code=row["ScripCode"], 
-    #                          symbol=row.TradingSymbol, 
-    #                          description=row.Description, 
-    #                          instrument_type=row.InstrumentType)
-    #     db.add(scriprow)
-    #     db.commit()
+
     
     logger.info("Caching etflist...")
     df = get_etflist_data()
     df.columns = [ "symbol","description","securtiy_name","date_of_listing","market_lot","isin","face_value"]
     df.to_sql("etflist", engine, if_exists="replace",index=False)
-    # for index, row in df.iterrows():
-    #     etfrow = ETFList(isin = row.ISINNumber,
-    #                      symbol = row.Symbol,
-    #                      description = row.Underlying,
-    #                      securtiy_name = row.SecurityName,
-    #                      date_of_listing = row.DateofListing,
-    #                      face_value = row.FaceValue
-    #                      )
-    #     db.add(etfrow)
-    #     db.commit()
+
     
     logger.info("Caching equity list...")
     df = get_eqlist_data()  
     df.columns = [ "symbol","description",  "series", "date_of_listing","paid_up_value","market_lot", "isin","face_value"]
     df.to_sql("equitylist", engine, if_exists="replace",index=False)
-    # for index, row in df.iterrows():
-    #     eqrow = EQList(isin = row["ISIN NUMBER"],
-    #                     symbol = row["SYMBOL"],
-    #                     description = row["NAME OF COMPANY"],
-    #                     series = row["SERIES"],
-    #                     date_of_listing = row["DATE OF LISTING"],
-    #                     face_value = row["FACE VALUE"],
-    #                     paid_up_value = row["PAID UP VALUE"],
-    #                     market_lot = row["MARKET LOT"]
-    #                     )
-    #     db.add(eqrow)
-    #     db.commit()
-    #     db.refresh(eqrow)
-    
+
 init_tables()
+
+def get_scrip_code(symbol:str):
+    db = get_db()
+    scripcode_table = ScripCode.__table__
+    query = select([scripcode_table]).where(scripcode_table.symbol.like(f"%{symbol}%"))
+    result = db.execute(query).fetchone()
+
+    if result:
+        return ScripCode(**result)  # Unpack row data into a ScripCode object
+    else:
+        return None
