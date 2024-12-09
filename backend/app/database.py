@@ -11,9 +11,10 @@
 from sqlalchemy import create_engine, MetaData, select
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import Session
+from datetime import date, timedelta
 from .models import Base, ScripCode, ETFList, EQList
 
-from .utils import get_scrip_data, get_etflist_data, get_eqlist_data
+from .utils import get_scrip_data, get_etflist_data, get_eqlist_data, get_indices_list, get_indices_hist_data
 
 from .config import get_logger
 
@@ -45,10 +46,8 @@ def init_tables(db = get_db())  ->  None:
     
     df.columns = [ "scrip_code",     "symbol",               "description",  "instrument_type"]
     df.to_sql("scripcodes", engine, if_exists="replace", index=False)
-     
-       
-
-    
+ 
+  
     logger.info("Caching etflist...")
     df = get_etflist_data()
     df.columns = [ "symbol","description","securtiy_name","date_of_listing","market_lot","isin","face_value"]
@@ -59,16 +58,32 @@ def init_tables(db = get_db())  ->  None:
     df = get_eqlist_data()  
     df.columns = [ "symbol","description",  "series", "date_of_listing","paid_up_value","market_lot", "isin","face_value"]
     df.to_sql("equitylist", engine, if_exists="replace",index=False)
+    
+    logger.info("Caching Indices...")
+    indices = get_indices_list()
+    # print(indices.keys())
+    for key in indices.keys():
+        for index in indices[key]:
+            print(key, index)
+            end_date = date.today()
+            start_date = end_date - timedelta(days=365)
+            df = get_indices_hist_data(index,start_date.strftime("%d-%m-%Y"),end_date.strftime("%d-%m-%Y"))
+            print(df)
+        
+        
+        
+    # indices = indices.values()
+    
 
 init_tables()
 
-def get_scrip_code(symbol:str):
-    db = get_db()
-    scripcode_table = ScripCode.__table__
-    query = select([scripcode_table]).where(scripcode_table.symbol.like(f"%{symbol}%"))
-    result = db.execute(query).fetchone()
+# def get_scrip_code(symbol:str):
+#     db = get_db()
+#     scripcode_table = ScripCode.__table__
+#     query = select([scripcode_table]).where(scripcode_table.symbol.like(f"%{symbol}%"))
+#     result = db.execute(query).fetchone()
 
-    if result:
-        return ScripCode(**result)  # Unpack row data into a ScripCode object
-    else:
-        return None
+#     if result:
+#         return ScripCode(**result)  # Unpack row data into a ScripCode object
+#     else:
+#         return None

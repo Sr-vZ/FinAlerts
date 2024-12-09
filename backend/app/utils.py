@@ -27,7 +27,7 @@ import pandas as pd
 from datetime import datetime
 from .config import get_logger
 import requests
-
+from nsepython import indices
 
 logger = get_logger()
 
@@ -127,7 +127,8 @@ def get_scrip_data():
     Fetch scripcodes from NSE
     """
     headers  = generate_headers(random.choice(user_agents))
-    response = httpx.get("https://charting.nseindia.com//Charts/GetEQMasters", headers=headers)
+    response = httpx.get("https://charting.nseindia.com//Charts/GetEQMasters", 
+                         headers=headers, verify=False)
     csv_str = StringIO(response.text)
     df = pd.read_csv(csv_str,sep="|")
     return df
@@ -138,7 +139,8 @@ def get_etflist_data():
     Fetch ETF List from NSE
     """
     headers  = generate_headers(random.choice(user_agents))
-    response = httpx.get("https://nsearchives.nseindia.com/content/equities/eq_etfseclist.csv", headers=headers)
+    response = httpx.get("https://nsearchives.nseindia.com/content/equities/eq_etfseclist.csv", 
+                         headers=headers, verify=False)
     csv_str = StringIO(response.text)
     df = pd.read_csv(csv_str,sep=",")
     return df
@@ -150,7 +152,7 @@ def get_eqlist_data():
     """
     headers  = generate_headers(random.choice(user_agents))
     response = httpx.get("https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv", 
-                         headers=headers)
+                         headers=headers, verify=False)
     csv_str = StringIO(response.text)
     df = pd.read_csv(csv_str,sep=",")
     return df
@@ -159,21 +161,25 @@ def get_eqlist_data():
 def get_indices_list():
     """
     fetches NSE indices categories and sectoral indices
+    
     """
     headers = generate_headers(random.choice(user_agents))
-    response  = httpx.get("https://www.nseindia.com/api/equity-master", headers=headers)
+    response  = httpx.get("https://www.nseindia.com/api/equity-master", 
+                          headers=headers, verify=False)
     return response.json()
 
 def get_scrip_code(symbol=None):
     df = get_scrip_data()
     # df.replace('\s+', '_',regex=True,inplace=True)
     df['TradingSymbol'] = df['TradingSymbol'].str.upper()
+    df['Description'] = df['Description'].str.upper()
     # print(symbol)
     # print("test: ")
     # print(df[df['TradingSymbol'].str.match("NIFTY 50")])
     # print(df[df['TradingSymbol'] == "NIFTY 50"])
     # print(df[df['TradingSymbol'] == symbol]['ScripCode'])
-    return df[df['TradingSymbol'] == symbol]['ScripCode'].item() 
+    print(symbol, df)
+    return df[(df['TradingSymbol'] == symbol)|(df['Description'] == symbol)]['ScripCode'].item() 
 
 def fetch_hist_nse_data(symbol, startdate, enddate, interval: int=5, period ="D"):
     """
@@ -216,27 +222,34 @@ def fetch_hist_nse_data(symbol, startdate, enddate, interval: int=5, period ="D"
     print(scrip_code)
 
     headers = generate_headers(random.choice(user_agents))
-    response = requests.post('https://charting.nseindia.com//Charts/symbolhistoricaldata/', 
-                          headers=headers,  json=data)
+    response = httpx.post('https://charting.nseindia.com//Charts/symbolhistoricaldata/', 
+                          headers=headers,  json=data, verify=False)
 
     # print(response.text)
     return response.json()
 
 
 def get_indices_hist_data(index:str, startdate:str, enddate:str):
+    
+    temp = get_indices_list()
+    valid_indices = [j for i in list(temp.values()) for j in i]
+    if index not in valid_indices:
+        logger.error(f"{index} is not a valid Index")
+        return None
+    
     # Validate date format
     try:
         start_date_obj = datetime.strptime(startdate, "%d-%m-%Y")
         end_date_obj = datetime.strptime(enddate, "%d-%m-%Y")
     except ValueError:
-        logger.error("Error: Dates should be in dd-mm-yyyy format.")
+        logger.error("Dates should be in dd-mm-yyyy format.")
         return None
 
     # Validate date range
     # if (end_date_obj - start_date_obj).days > 365:
     #     logger.error("Error: The difference between startdate and enddate should not exceed 365 days.")
     #     return None
-
+    
     if (end_date_obj - start_date_obj).days < 0:
         logger.error("enddate must be later than or equal to startdate.")
         return None
@@ -253,11 +266,7 @@ def get_indices_hist_data(index:str, startdate:str, enddate:str):
     return df
     # headers = generate_headers(random.choice(user_agents))
     # headers['referer'] = 'https://www.nseindia.com/reports-indices-historical-index-data'
-    # temp = get_indices_list()
-    # valid_indices = [j for i in list(temp.values()) for j in i]
-    # if index not in valid_indices:
-    #     logger.error(f"{index} is not a valid Index")
-    #     return None
+
     
     # index = index.replace(" ","%20")
     # index_url = "https://www.nseindia.com/api/historical/indicesHistory?indexType=NIFTY%20NEXT%2050&from=01-01-2023&to=31-12-2023"
@@ -270,3 +279,4 @@ def get_indices_hist_data(index:str, startdate:str, enddate:str):
 
     
 get_indices_hist_data('NIFTY 50', '01-12-2024', '08-12-2024')
+print(indices)
