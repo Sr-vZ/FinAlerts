@@ -14,9 +14,11 @@ from sqlalchemy.orm import Session
 from datetime import date, timedelta
 from .models import Base, ScripCode, ETFList, EQList
 
-from .utils import get_scrip_data, get_etflist_data, get_eqlist_data, get_indices_list, get_indices_hist_data
+from .utils import get_scrip_data, get_etflist_data, \
+    get_eqlist_data, get_indices_list, get_indices_hist_data,\
+    get_nse_indices_mapping, get_trading_index_name
 
-from .config import get_logger
+from .config import get_logger, get_relevant_nse_indices
 
 DATABASE_URL = "sqlite:///./test.db"  # You can use any database here
 
@@ -60,15 +62,17 @@ def init_tables(db = get_db())  ->  None:
     df.to_sql("equitylist", engine, if_exists="replace",index=False)
     
     logger.info("Caching Indices...")
-    indices = get_indices_list()
+    indices = get_relevant_nse_indices()
+    # indices_mapping = get_nse_indices_mapping()
     # print(indices.keys())
-    for key in indices.keys():
-        for index in indices[key]:
-            print(key, index)
-            end_date = date.today()
-            start_date = end_date - timedelta(days=365)
-            df = get_indices_hist_data(index,start_date.strftime("%d-%m-%Y"),end_date.strftime("%d-%m-%Y"))
-            print(df)
+    
+    for index in indices:
+        print(index)
+        end_date = date.today()
+        start_date = end_date - timedelta(days=365)
+        # index = get_trading_index_name(index)
+        df = get_indices_hist_data(index,start_date.strftime("%d-%m-%Y"),end_date.strftime("%d-%m-%Y"))
+        print(df)
         
         
         

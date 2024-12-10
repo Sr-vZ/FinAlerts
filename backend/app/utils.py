@@ -25,9 +25,10 @@ import re
 import random
 import pandas as pd
 from datetime import datetime
-from .config import get_logger
+from .config import get_logger, get_relevant_nse_indices
 import requests
 from nsepython import indices
+import difflib
 
 logger = get_logger()
 
@@ -157,7 +158,36 @@ def get_eqlist_data():
     df = pd.read_csv(csv_str,sep=",")
     return df
 
-# TODO
+
+def get_nse_indices_mapping():
+    """
+    This is to map NSE's weird internal naming of indices 
+    which is needed to fetch OHLCV data
+    """
+    headers = generate_headers(random.choice(user_agents))
+    response  = httpx.get("https://iislliveblob.niftyindices.com/assets/json/IndexMapping.json", 
+                          headers=headers, verify=False)
+    return response.json()
+
+def get_trading_index_name(index_long_name):
+    """Gets the trading index name based on the index long name.
+
+    Args:
+    index_long_name: The long name of the index.
+    data: The list of indices, each with a `Trading_Index_Name` and `Index_long_name`.
+
+    Returns:
+    The trading index name, or None if not found.
+    """
+    headers = generate_headers(random.choice(user_agents))
+    response  = httpx.get("https://iislliveblob.niftyindices.com/assets/json/IndexMapping.json", 
+                          headers=headers, verify=False)
+
+    for index_data in response.json():
+        if index_data['Index_long_name'].upper() == index_long_name.upper():
+            return index_data['Trading_Index_Name']
+    return None
+
 def get_indices_list():
     """
     fetches NSE indices categories and sectoral indices
@@ -178,8 +208,19 @@ def get_scrip_code(symbol=None):
     # print(df[df['TradingSymbol'].str.match("NIFTY 50")])
     # print(df[df['TradingSymbol'] == "NIFTY 50"])
     # print(df[df['TradingSymbol'] == symbol]['ScripCode'])
-    print(symbol, df)
-    return df[(df['TradingSymbol'] == symbol)|(df['Description'] == symbol)]['ScripCode'].item() 
+    symbol = symbol.upper()
+    print(symbol)
+    # print(df)
+    print(difflib.get_close_matches(symbol,df['Description'],n=1))
+    closest_match = difflib.get_close_matches(symbol,df['Description'],n=1, cutoff=0.75)[0]
+    print(symbol, closest_match)
+    # if df[df['TradingSymbol'] == symbol]['ScripCode'].item() == None:
+    #     if len(closest_match) > 0:
+    #         closest_match = difflib.get_close_matches(symbol,df['Description'],n=1)[0]
+    #     else:
+    #         return None
+    #     return df[df['Description'] == closest_match]['ScripCode'].item()
+    return df[(df['TradingSymbol'] == symbol)|(df['Description'] == symbol)|(df['Description'] == closest_match)]['ScripCode'].item() 
 
 def fetch_hist_nse_data(symbol, startdate, enddate, interval: int=5, period ="D"):
     """
@@ -231,10 +272,12 @@ def fetch_hist_nse_data(symbol, startdate, enddate, interval: int=5, period ="D"
 
 def get_indices_hist_data(index:str, startdate:str, enddate:str):
     
+    relevant_indices = get_relevant_nse_indices()
+    
     temp = get_indices_list()
     valid_indices = [j for i in list(temp.values()) for j in i]
-    if index not in valid_indices:
-        logger.error(f"{index} is not a valid Index")
+    if index not in relevant_indices:
+        logger.error(f"{index} is not a relevant Index")
         return None
     
     # Validate date format
@@ -254,7 +297,7 @@ def get_indices_hist_data(index:str, startdate:str, enddate:str):
         logger.error("enddate must be later than or equal to startdate.")
         return None
 
-    result =  fetch_hist_nse_data(symbol=index,
+    result =  fetch_hist_nse_data(symbol=get_trading_index_name(index),
                                startdate=startdate,
                                enddate=enddate, 
                                interval=1, period="D")
