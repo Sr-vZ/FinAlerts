@@ -89,7 +89,7 @@ def get_relevant_nse_indices() -> list:
         "NIFTY500 MULTICAP INFRASTRUCTURE 50:30:20",
         "NIFTY INDIA DEFENCE",
         "NIFTY INDIA TOURISM",
-        "NIFTY CAPITAL MARKETS"
+        "NIFTY CAPITAL MARKETS",
         "NIFTY DIVIDEND OPPORTUNITIES 50",
         "NIFTY50 VALUE 20",
         "NIFTY100 QUALITY 30",

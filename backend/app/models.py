@@ -53,4 +53,4 @@ class EQList(Base):
     face_value = Column(Integer)
     market_lot = Column(Integer)
     paid_up_value = Column(Integer)
-    series = Column(String) 
+    series = Column(String)

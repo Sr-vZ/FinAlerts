@@ -209,11 +209,11 @@ def get_scrip_code(symbol=None):
     # print(df[df['TradingSymbol'] == "NIFTY 50"])
     # print(df[df['TradingSymbol'] == symbol]['ScripCode'])
     symbol = symbol.upper()
-    print(symbol)
+    # print(symbol)
     # print(df)
-    print(difflib.get_close_matches(symbol,df['Description'],n=1))
+    # print(difflib.get_close_matches(symbol,df['Description'],n=1))
     closest_match = difflib.get_close_matches(symbol,df['Description'],n=1, cutoff=0.75)[0]
-    print(symbol, closest_match)
+    # print(symbol, closest_match)
     # if df[df['TradingSymbol'] == symbol]['ScripCode'].item() == None:
     #     if len(closest_match) > 0:
     #         closest_match = difflib.get_close_matches(symbol,df['Description'],n=1)[0]
@@ -260,7 +260,7 @@ def fetch_hist_nse_data(symbol, startdate, enddate, interval: int=5, period ="D"
         'scripCode': scrip_code,
         'ulToken': scrip_code,
     }
-    print(scrip_code)
+    # print(scrip_code)
 
     headers = generate_headers(random.choice(user_agents))
     response = httpx.post('https://charting.nseindia.com//Charts/symbolhistoricaldata/', 
@@ -304,7 +304,7 @@ def get_indices_hist_data(index:str, startdate:str, enddate:str):
 
     result['s'] = index
     df = pd.DataFrame.from_dict(result)
-    df.columns = ["index","ts","open","high","low","close","volume"]
+    df.columns = ["index_name","ts","open","high","low","close","volume"]
     # print(df)
     return df
     # headers = generate_headers(random.choice(user_agents))
@@ -321,5 +321,5 @@ def get_indices_hist_data(index:str, startdate:str, enddate:str):
     
 
     
-get_indices_hist_data('NIFTY 50', '01-12-2024', '08-12-2024')
-print(indices)
+# get_indices_hist_data('NIFTY 50', '01-12-2024', '08-12-2024')
+# print(indices)

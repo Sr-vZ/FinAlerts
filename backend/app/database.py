@@ -72,7 +72,9 @@ def init_tables(db = get_db())  ->  None:
         start_date = end_date - timedelta(days=365)
         # index = get_trading_index_name(index)
         df = get_indices_hist_data(index,start_date.strftime("%d-%m-%Y"),end_date.strftime("%d-%m-%Y"))
-        print(df)
+        # print("db ", df)
+        # df = df.drop(columns=['index_name'], axis=1, inplace=True)
+        df.to_sql(index.replace(" ","_"),engine, if_exists="replace", index=False)
         
         
         
