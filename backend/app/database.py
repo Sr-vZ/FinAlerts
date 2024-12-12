@@ -8,10 +8,11 @@
 # SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 # Base: DeclarativeMeta = declarative_base()
 # database.py
-from sqlalchemy import create_engine, MetaData, select
+from sqlalchemy import create_engine, MetaData, select, inspect
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import Session
 from datetime import date, timedelta
+import pandas as pd
 from .models import Base, ScripCode, ETFList, EQList
 
 from .utils import get_scrip_data, get_etflist_data, \
@@ -38,17 +39,35 @@ Base.metadata.create_all(bind=engine)
 
 logger = get_logger()
 
+def check_table_exists(engine, table_name):
+    inspector = inspect(engine)
+    return table_name in inspector.get_table_names()
+
+def append_if_needed(table_name, df, date_col, engine):
+    if check_table_exists(engine, table_name):
+        # Read existing data
+        existing_df = pd.read_sql_table(table_name, con=engine)
+        if not existing_df.empty:
+            last_date = pd.to_datetime(existing_df[date_col]).max()
+            today = pd.to_datetime(date.today())
+            if last_date >= today:
+                logger.info(f"Table '{table_name}' is up to date.")
+                return
+    else:
+        logger.info(f"Table '{table_name}' does not exist. Creating it.")
+    df.to_sql(table_name, engine, if_exists="append", index=False)
+
 def init_tables(db = get_db())  ->  None:
     """
     Populate the tables with data
     """
     logger.info("Populating DB with initial data...")
     logger.info("Caching scripcodes...")
-    df = get_scrip_data()
-    
-    df.columns = [ "scrip_code",     "symbol",               "description",  "instrument_type"]
-    df.to_sql("scripcodes", engine, if_exists="replace", index=False)
- 
+    if check_table_exists(engine, "scripcodes") == None:
+        df = get_scrip_data()
+        df.columns = [ "scrip_code",     "symbol",               "description",  "instrument_type"]
+        df.to_sql("scripcodes", engine, if_exists="replace", index=False)
+    logger.info("Table scripcodes already exists!")
   
     logger.info("Caching etflist...")
     df = get_etflist_data()
@@ -67,14 +86,15 @@ def init_tables(db = get_db())  ->  None:
     # print(indices.keys())
     
     for index in indices:
-        print(index)
+        logger.info(f"Caching {index}...")
         end_date = date.today()
         start_date = end_date - timedelta(days=365)
         # index = get_trading_index_name(index)
         df = get_indices_hist_data(index,start_date.strftime("%d-%m-%Y"),end_date.strftime("%d-%m-%Y"))
         # print("db ", df)
         # df = df.drop(columns=['index_name'], axis=1, inplace=True)
-        df.to_sql(index.replace(" ","_"),engine, if_exists="replace", index=False)
+        # df.to_sql(index.replace(" ","_"),engine, if_exists="replace", index=False)
+        append_if_needed(index.replace(" ", "_"), df, "ts", engine)
         
         
         
