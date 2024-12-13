@@ -101,7 +101,7 @@ def init_tables(db = get_db())  ->  None:
     # indices = indices.values()
     
 
-init_tables()
+#init_tables()
 
 # def get_scrip_code(symbol:str):
 #     db = get_db()

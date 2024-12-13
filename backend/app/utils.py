@@ -27,7 +27,7 @@ import pandas as pd
 from datetime import datetime
 from .config import get_logger, get_relevant_nse_indices
 import requests
-from nsepython import indices
+# from nsepython import indices
 import difflib
 
 logger = get_logger()
