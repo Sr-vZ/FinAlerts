@@ -137,76 +137,91 @@ def get_global_indices_metadata(search_term: str|None = None):
             "symbol": "de;qx",
             "name": "DAX",
             "geography": "EU",
+            "db_name": "DAX"
         },
         {
             "symbol": "gb;FTSE",
             "name": "FTSE",
             "geography": "EU",
+            "db_name": "FTSE"
         },
         {
             "symbol": "fr;CAC",
             "name": "CAC",
             "geography": "EU",
+            "db_name": "CAC"
         },
         {
             "symbol": "in;gsx",
             "name": "GIFT NIFTY",
             "geography": "ASIA",
+            "db_name": "NIFTY 50"
         },        
         {
             "symbol": "JP;N225",
-            "name": "NIKKEI 225",
+            "name": "Nikkei 225",
             "geography": "ASIA",
+            "db_name": "NIKKEI 225"
         },
         {
             "symbol": "sg;STII",
             "name": "Straits Times",
             "geography": "ASIA",
+            "db_name": "STI"
         },
         {
             "symbol": "cn;hsi",
             "name": "Hang Seng",
             "geography": "ASIA",
+            "db_name": "HSI"
         },
         {
             "symbol": "tw;IXTA",
             "name": "Taiwan Weighted",
             "geography": "ASIA",
+            "db_name": "IXTA"
         },
         {
             "symbol": "kr;KSPI",
             "name": "KOSPI",
             "geography": "ASIA",
+            "db_name": "KSPI"
         },       
         {
             "symbol": "th;SETI",
             "name": "SET Composite",
             "geography": "ASIA",
+            "db_name": "SETI"
         }, 
         {
             "symbol": "id;JSC",
             "name": "Jakarta Composite",
             "geography": "ASIA",
+            "db_name": "JSC"
         },        
         {
             "symbol": "cn;shi",
             "name": "Shanghai Composite",
             "geography": "ASIA",
+            "db_name": "SHI"
         },         
         {
             "symbol": "INDU:IND",
             "name": "Dow Jones",
             "geography": "US",
+            "db_name": "DOW JONES"
         }, 
         {
             "symbol": "SPX:IND",
             "name": "S&P 500",
             "geography": "US",
+            "db_name": "SPX"
         },
         {
             "symbol": "CCMP:IND",
             "name": "Nasdaq",
             "geography": "US",
+            "db_name": "NASDAQ"
         },          
     ]
     if search_term:

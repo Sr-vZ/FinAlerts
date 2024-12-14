@@ -113,3 +113,17 @@ def init_tables(db = get_db())  ->  None:
 #         return ScripCode(**result)  # Unpack row data into a ScripCode object
 #     else:
 #         return None
+
+def get_index_db_data(index:str, startddte:str|None = None, enddate: str|None = None):
+    insp = inspect(engine)
+    print()
+    tables = insp.get_table_names()
+    if index.upper().replace(" ","_") in tables:
+        stmt = f'select * from "{index.upper().replace(" ","_")}"'
+        conn = engine.connect()
+        # results = conn.execute(stmt).fetchall()
+        df = pd.read_sql(stmt,con=engine)
+        print(df)
+        return df.to_json()
+
+get_index_db_data("NIFTY 50")
