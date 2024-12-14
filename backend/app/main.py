@@ -23,6 +23,7 @@ from .auth.auth_handler import get_current_user
 
 from .routers import auth
 from .routers import user
+from .routers import indices
 
 from .database import init_tables
 
@@ -155,6 +156,7 @@ async def dashboard(
 
 app.include_router(user.router)
 app.include_router(auth.router, prefix="/auth")
+app.include_router(indices.router)
 
 if __name__ == "__main__":
     init_tables()

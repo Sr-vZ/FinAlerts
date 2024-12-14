@@ -109,3 +109,107 @@ def get_relevant_nse_indices() -> list:
         "NIFTY TOP 10 EQUAL WEIGHT"
     ]
     return relevant_indices
+
+def search_metadata(data, search_term):
+    """
+    Search for a term in the 'symbol' or 'name' keys of JSON data.
+
+    Args:
+        data (list): List of dictionaries containing market data.
+        search_term (str): The term to search for.
+
+    Returns:
+        list: A list of matching JSON objects.
+    """
+    # Convert search_term to lowercase for case-insensitive matching
+    search_term_lower = search_term.lower()
+    return [
+        entry for entry in data
+        if search_term_lower in entry["symbol"].lower() or 
+        search_term_lower in entry["name"].lower() or 
+        search_term_lower in entry["geography"].lower()
+    ]
+
+
+def get_global_indices_metadata(search_term: str|None = None):
+    data = [
+        {
+            "symbol": "de;qx",
+            "name": "DAX",
+            "geography": "EU",
+        },
+        {
+            "symbol": "gb;FTSE",
+            "name": "FTSE",
+            "geography": "EU",
+        },
+        {
+            "symbol": "fr;CAC",
+            "name": "CAC",
+            "geography": "EU",
+        },
+        {
+            "symbol": "in;gsx",
+            "name": "GIFT NIFTY",
+            "geography": "ASIA",
+        },        
+        {
+            "symbol": "JP;N225",
+            "name": "NIKKEI 225",
+            "geography": "ASIA",
+        },
+        {
+            "symbol": "sg;STII",
+            "name": "Straits Times",
+            "geography": "ASIA",
+        },
+        {
+            "symbol": "cn;hsi",
+            "name": "Hang Seng",
+            "geography": "ASIA",
+        },
+        {
+            "symbol": "tw;IXTA",
+            "name": "Taiwan Weighted",
+            "geography": "ASIA",
+        },
+        {
+            "symbol": "kr;KSPI",
+            "name": "KOSPI",
+            "geography": "ASIA",
+        },       
+        {
+            "symbol": "th;SETI",
+            "name": "SET Composite",
+            "geography": "ASIA",
+        }, 
+        {
+            "symbol": "id;JSC",
+            "name": "Jakarta Composite",
+            "geography": "ASIA",
+        },        
+        {
+            "symbol": "cn;shi",
+            "name": "Shanghai Composite",
+            "geography": "ASIA",
+        },         
+        {
+            "symbol": "INDU:IND",
+            "name": "Dow Jones",
+            "geography": "US",
+        }, 
+        {
+            "symbol": "SPX:IND",
+            "name": "S&P 500",
+            "geography": "US",
+        },
+        {
+            "symbol": "CCMP:IND",
+            "name": "Nasdaq",
+            "geography": "US",
+        },          
+    ]
+    if search_term:
+        return search_metadata(data, search_term)
+    else:
+        return data
