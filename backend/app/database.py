@@ -12,6 +12,7 @@ from sqlalchemy import create_engine, MetaData, select, inspect
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import Session
 from datetime import date, timedelta
+import json
 import pandas as pd
 from .models import Base, ScripCode, ETFList, EQList
 
@@ -114,16 +115,18 @@ def init_tables(db = get_db())  ->  None:
 #     else:
 #         return None
 
-def get_index_db_data(index:str, startddte:str|None = None, enddate: str|None = None):
+def db_get_table_names():
     insp = inspect(engine)
-    print()
-    tables = insp.get_table_names()
+    return insp.get_table_names()
+
+def db_get_index_data(index:str, startddte:str|None = None, enddate: str|None = None):
+    tables = db_get_table_names()
     if index.upper().replace(" ","_") in tables:
         stmt = f'select * from "{index.upper().replace(" ","_")}"'
         conn = engine.connect()
         # results = conn.execute(stmt).fetchall()
         df = pd.read_sql(stmt,con=engine)
-        print(df)
-        return df.to_json()
+        # print(df)
+        return json.loads(df.to_json(orient="records"))
 
-get_index_db_data("NIFTY 50")
+db_get_index_data("NIFTY 50")
