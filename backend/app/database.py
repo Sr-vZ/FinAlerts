@@ -129,4 +129,4 @@ def db_get_index_data(index:str, startddte:str|None = None, enddate: str|None = 
         # print(df)
         return json.loads(df.to_json(orient="records"))
 
-db_get_index_data("NIFTY 50")
+# db_get_index_data("NIFTY 50")

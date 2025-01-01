@@ -151,8 +151,15 @@ async def signup(request: Request):
 async def dashboard(
     request: Request, current_user: str = Depends(get_current_user)
 ):
-    print("gcu",get_current_user())
+    # print("gcu",get_current_user())
     return templates.TemplateResponse("dashboard.html", {"request": request, "user": current_user})
+
+@app.get("/dashboard_test", response_class=HTMLResponse)
+async def dashboard_test(
+    request: Request, current_user: str = Depends(get_current_user)
+):
+    # print("gcu",get_current_user())
+    return templates.TemplateResponse("dashboard_test.html", {"request": request, "user": current_user})
 
 app.include_router(user.router)
 app.include_router(auth.router, prefix="/auth")
