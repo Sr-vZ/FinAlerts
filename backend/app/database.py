@@ -66,7 +66,7 @@ def init_tables(db = get_db())  ->  None:
     logger.info("Caching scripcodes...")
     if check_table_exists(engine, "scripcodes") == None:
         df = get_scrip_data()
-        df.columns = [ "scrip_code",     "symbol",               "description",  "instrument_type"]
+        df.columns = [ "scrip_code", "symbol", "description", "instrument_type"]
         df.to_sql("scripcodes", engine, if_exists="replace", index=False)
     logger.info("Table scripcodes already exists!")
   
@@ -102,7 +102,7 @@ def init_tables(db = get_db())  ->  None:
     # indices = indices.values()
     
 
-#init_tables()
+# init_tables()
 
 # def get_scrip_code(symbol:str):
 #     db = get_db()

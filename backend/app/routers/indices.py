@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from ..utils import get_global_indices, get_global_hist_indices
+from ..utils import get_global_indices, get_global_hist_indices, get_nse_indices
 from ..config import get_logger, get_relevant_nse_indices
 from ..database import db_get_table_names, db_get_index_data
 
@@ -41,3 +41,7 @@ async def get_indices(symbol:str,
             return db_get_index_data(formatted_symbol, startdate, enddate)
         return get_global_hist_indices(symbol, startdate, enddate)
         
+        
+@router.get("/nse_indices")
+async def fetch_nse_indices(symbol:str):
+    return get_nse_indices()
