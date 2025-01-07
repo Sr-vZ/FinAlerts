@@ -30,6 +30,7 @@ import requests
 # from nsepython import indices
 import difflib
 import jwt
+from bs4 import BeautifulSoup
 
 logger = get_logger()
 
@@ -80,6 +81,7 @@ def generate_headers(user_agent):
     """
     To rotate the user agent to prevent getting IP banned
     """
+    # TODO: add user_agents in function and make origin as argument
     # Define a function to parse the sec-ch-ua from the user-agent
     def parse_sec_ch_ua(user_agent):
         # Extract browser info (simplified for common browsers)
@@ -425,35 +427,89 @@ def get_nse_cookies():
     
     
 
+# def get_nse_indices():
+#     # headers = generate_headers(random.choice(user_agents))
+#     # headers['referer'] = 'https://www.nseindia.com/market-data/live-market-indices'
+#     # headers.pop('origin', None)
+#     cookies = {
+#     'defaultLang': 'en',
+#     'nsit': 'hJ0HH5iOKS52RjxAKrHWBBnw',
+#     'AKA_A2': 'A',
+#     'nseappid': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJhcGkubnNlIiwiYXVkIjoiYXBpLm5zZSIsImlhdCI6MTczNTkzMzMyNSwiZXhwIjoxNzM1OTQwNTI1fQ.Y2hqAEe3pLhHcj-wjhtmjvJTdRyVIl5MdfTJeqhIB_4',
+#     'bm_mi': 'AFDFDCD8F88E17BEB603BE00A0E1A837~YAAQFf7UF1rYhtGTAQAAMnGwLRpKvQA+p/M2wzz5cF/u//5z+AiKOGooDQQQnDqXxEAxCrwqN7r7ZHg+H6g/GqHEt3wGyPwDgEo/3sTv5ZbMwSWb9Wu7bG2cVm9r4PnJhEmM0Yplci9Vi98dlnU77vVWxxIATUr2Uqk9v+7Dic5dDqPSfrPLx1Ob5krcQ0Mqt0Qf4p5f+50mnpaxu9Bf1B2HEiCpEMXdXGEIbn07/ybEuo39SLIHEWCnpjJ+vkgRH/JaJxAU4NcsMjDLHgGRBg2804v79a01O4/SIwU8U3QWUMiCa2KNaFuEwHijEgoDwW1GWP96RLZP010WM9dTP6/uivEMcg1ARfr3nptZtA==~1',
+#     'bm_sz': '5A487D87FDDAD99E426686269A54E1A5~YAAQFf7UF1zYhtGTAQAAMnGwLRpkJr+zjEYqP6hLIQsOja6wR1O92rsmQ4IHJBSAoNAQFO15RaxGuwo/X6jc3C8uYWHzxQWSxUIkxqWsB4DQ1ElMznUXpp0EsrYhHs7KvoZ7tjQuu8T+1sPwRE0Q6gD0jg8wy/Vl8bsrLeYojezJbkkOPgVhDUJpmNn6JZo/VsWXLkC7EjC3wyj2sxpm+9oR0xYUSPevVz6a3vZxGwiITYWxk3nSj2cpAALxJkC3Fxzd7+uFb0uBtj9WGFfuZSwmK/LcZbBATLTm5zOmyF5ZYX7N5xSkP0rt2yefk70TqjAf3lmc+FcIhmYQiZhLWtActTpTMGPDNHhC0dK9sjZ3b+TyxphmM1yky+a6L7GWmZgf9dUQt/8xkInsWy5D1ih1jRE=~4535605~4338738',
+#     '_abck': '07B1F1F995ACFC756B5CE515B94E43DF~0~YAAQFf7UF+zYhtGTAQAA9YKwLQ3k942YUr6S14R+dCXdA5dormCivz5sfecVA7mD7JJ/MxyONUOjQUgSb6vBqfkv0QWYCf2barybjRt3DJTWBlj94+/UD4nclZp6z7ssJyIxYVDJ5S04TM07h9x/k03Hm2E9LDoEvdYYAmtRwjW0AiIWO4E51JCCENPd3qOvhqxQu3IE7mfsmn/P5En3rK4S8AJaKJNURa5m1sSHy+mCwV1YwdUENBOmZ/1HXrw2aM58uxkVFQaYD7rY9vt98XzaNfCdEMbetTQpEzafL1FLOFQRC01ScWPqtPGrTg0LcJggpyErg4mo7Oqatc/Xt9If3fI4bZ6J0pDtLAZ8HF9Kb+d18hXa2Rigrtt7yPjCVkTek2U/8wJjp67X1sv8RnYIqC9WcfUaDlOmlaQlh4SI+QwNUomM1eIZuJP1Z9pN7ZitHyl85RIe6M8mtFbAAGle1KerDysJHAFsLVQZmcV+b7cxahczZsiZF3vlgMAT6w==~-1~||0||~-1',
+#     'bm_sv': 'B87BFA33D08467F49BC911B882C0BB93~YAAQL3LBF3ZTZumTAQAAIKiwLRpm8EsOGqx0PE6TAwoAzmgXVns6crDpZZkQa/vnb+2TUXbaQ52pgN4Fw5KRQcTZcRt4cb6xHR2Gd5UyUXvBCSwFc+/JBAqRStJPmcFRdSUYMCLfnb/rG7JUJNbi4Ku0kepq7BOz6/yyMOxam19G0DZReit4sGKQHOL3hhGM83odNb2VP90Z7oSFJCETShrgLW6p1bzWMCtfCiVC1xEo8oC27Yh4KzGnPZsc+OLpm8sl~1',
+#     'ak_bmsc': 'FBEBC972FE720F65011D243F87D79872~000000000000000000000000000000~YAAQFf7UFxjahtGTAQAAhbGwLRpQUwfEaOyY0Gq3K3LNx6Y6E/YVLl1jFxwNgcu4phhSLTJfaatZsavLFUMu8shYHI2d5V4l2+AyMCw1ZmrlqeGFIOi+GxGBSgKbay0R2Awk/0Y7d3xTsrdFVcXYiFsVi/1mJ1AAPABhaeULM4Nop4hW62kEQxmsH7kMrvtFtPAtWWkk2d+h3IXX+BXef2PDtSWtOMfmXqWbox/Oh0ux5ELcfQfsaP+ps+3jYZzCATpHG+EUQ+aT9JUeC4F5C3+40GfBXqn1UiLw1o2+GtwD6+ge9lVWp/aGq6RxFtNv6Hx/Fu3ztbWAvqgyyNrEmwlhxdm/dxFtuLfIyMTIZhBpnpogGryQkw7CUud70I+9FH3TQTdY7n73IYZ6qsL9/C9FNyHnP4wTZeowbyQsTeQfDszInZHR6G0SLFvBogVKHMZDrLW65pfIrveC5nJo',
+#     }
+#     headers = {
+#     'accept': '*/*',
+#     'accept-language': 'en-US,en;q=0.9',
+#     # 'cookie': 'defaultLang=en; nsit=hJ0HH5iOKS52RjxAKrHWBBnw; AKA_A2=A; nseappid=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJhcGkubnNlIiwiYXVkIjoiYXBpLm5zZSIsImlhdCI6MTczNTkzMzMyNSwiZXhwIjoxNzM1OTQwNTI1fQ.Y2hqAEe3pLhHcj-wjhtmjvJTdRyVIl5MdfTJeqhIB_4; bm_mi=AFDFDCD8F88E17BEB603BE00A0E1A837~YAAQFf7UF1rYhtGTAQAAMnGwLRpKvQA+p/M2wzz5cF/u//5z+AiKOGooDQQQnDqXxEAxCrwqN7r7ZHg+H6g/GqHEt3wGyPwDgEo/3sTv5ZbMwSWb9Wu7bG2cVm9r4PnJhEmM0Yplci9Vi98dlnU77vVWxxIATUr2Uqk9v+7Dic5dDqPSfrPLx1Ob5krcQ0Mqt0Qf4p5f+50mnpaxu9Bf1B2HEiCpEMXdXGEIbn07/ybEuo39SLIHEWCnpjJ+vkgRH/JaJxAU4NcsMjDLHgGRBg2804v79a01O4/SIwU8U3QWUMiCa2KNaFuEwHijEgoDwW1GWP96RLZP010WM9dTP6/uivEMcg1ARfr3nptZtA==~1; bm_sz=5A487D87FDDAD99E426686269A54E1A5~YAAQFf7UF1zYhtGTAQAAMnGwLRpkJr+zjEYqP6hLIQsOja6wR1O92rsmQ4IHJBSAoNAQFO15RaxGuwo/X6jc3C8uYWHzxQWSxUIkxqWsB4DQ1ElMznUXpp0EsrYhHs7KvoZ7tjQuu8T+1sPwRE0Q6gD0jg8wy/Vl8bsrLeYojezJbkkOPgVhDUJpmNn6JZo/VsWXLkC7EjC3wyj2sxpm+9oR0xYUSPevVz6a3vZxGwiITYWxk3nSj2cpAALxJkC3Fxzd7+uFb0uBtj9WGFfuZSwmK/LcZbBATLTm5zOmyF5ZYX7N5xSkP0rt2yefk70TqjAf3lmc+FcIhmYQiZhLWtActTpTMGPDNHhC0dK9sjZ3b+TyxphmM1yky+a6L7GWmZgf9dUQt/8xkInsWy5D1ih1jRE=~4535605~4338738; _abck=07B1F1F995ACFC756B5CE515B94E43DF~0~YAAQFf7UF+zYhtGTAQAA9YKwLQ3k942YUr6S14R+dCXdA5dormCivz5sfecVA7mD7JJ/MxyONUOjQUgSb6vBqfkv0QWYCf2barybjRt3DJTWBlj94+/UD4nclZp6z7ssJyIxYVDJ5S04TM07h9x/k03Hm2E9LDoEvdYYAmtRwjW0AiIWO4E51JCCENPd3qOvhqxQu3IE7mfsmn/P5En3rK4S8AJaKJNURa5m1sSHy+mCwV1YwdUENBOmZ/1HXrw2aM58uxkVFQaYD7rY9vt98XzaNfCdEMbetTQpEzafL1FLOFQRC01ScWPqtPGrTg0LcJggpyErg4mo7Oqatc/Xt9If3fI4bZ6J0pDtLAZ8HF9Kb+d18hXa2Rigrtt7yPjCVkTek2U/8wJjp67X1sv8RnYIqC9WcfUaDlOmlaQlh4SI+QwNUomM1eIZuJP1Z9pN7ZitHyl85RIe6M8mtFbAAGle1KerDysJHAFsLVQZmcV+b7cxahczZsiZF3vlgMAT6w==~-1~||0||~-1; bm_sv=B87BFA33D08467F49BC911B882C0BB93~YAAQL3LBF3ZTZumTAQAAIKiwLRpm8EsOGqx0PE6TAwoAzmgXVns6crDpZZkQa/vnb+2TUXbaQ52pgN4Fw5KRQcTZcRt4cb6xHR2Gd5UyUXvBCSwFc+/JBAqRStJPmcFRdSUYMCLfnb/rG7JUJNbi4Ku0kepq7BOz6/yyMOxam19G0DZReit4sGKQHOL3hhGM83odNb2VP90Z7oSFJCETShrgLW6p1bzWMCtfCiVC1xEo8oC27Yh4KzGnPZsc+OLpm8sl~1; ak_bmsc=FBEBC972FE720F65011D243F87D79872~000000000000000000000000000000~YAAQFf7UFxjahtGTAQAAhbGwLRpQUwfEaOyY0Gq3K3LNx6Y6E/YVLl1jFxwNgcu4phhSLTJfaatZsavLFUMu8shYHI2d5V4l2+AyMCw1ZmrlqeGFIOi+GxGBSgKbay0R2Awk/0Y7d3xTsrdFVcXYiFsVi/1mJ1AAPABhaeULM4Nop4hW62kEQxmsH7kMrvtFtPAtWWkk2d+h3IXX+BXef2PDtSWtOMfmXqWbox/Oh0ux5ELcfQfsaP+ps+3jYZzCATpHG+EUQ+aT9JUeC4F5C3+40GfBXqn1UiLw1o2+GtwD6+ge9lVWp/aGq6RxFtNv6Hx/Fu3ztbWAvqgyyNrEmwlhxdm/dxFtuLfIyMTIZhBpnpogGryQkw7CUud70I+9FH3TQTdY7n73IYZ6qsL9/C9FNyHnP4wTZeowbyQsTeQfDszInZHR6G0SLFvBogVKHMZDrLW65pfIrveC5nJo',
+#     'priority': 'u=1, i',
+#     'referer': 'https://www.nseindia.com/market-data/live-market-indices',
+#     'sec-ch-ua': '"Chromium";v="130", "Opera GX";v="115", "Not?A_Brand";v="99"',
+#     'sec-ch-ua-mobile': '?0',
+#     'sec-ch-ua-platform': '"Windows"',
+#     'sec-fetch-dest': 'empty',
+#     'sec-fetch-mode': 'cors',
+#     'sec-fetch-site': 'same-origin',
+#     'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 OPR/115.0.0.0',
+#     }
+#     response = httpx.get('https://www.nseindia.com/api/allIndices', headers=headers, cookies=cookies, verify=False)
+#     print(response.text)
+#     return response.json()
+
 def get_nse_indices():
-    # headers = generate_headers(random.choice(user_agents))
-    # headers['referer'] = 'https://www.nseindia.com/market-data/live-market-indices'
-    # headers.pop('origin', None)
-    cookies = {
-    'defaultLang': 'en',
-    'nsit': 'hJ0HH5iOKS52RjxAKrHWBBnw',
-    'AKA_A2': 'A',
-    'nseappid': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJhcGkubnNlIiwiYXVkIjoiYXBpLm5zZSIsImlhdCI6MTczNTkzMzMyNSwiZXhwIjoxNzM1OTQwNTI1fQ.Y2hqAEe3pLhHcj-wjhtmjvJTdRyVIl5MdfTJeqhIB_4',
-    'bm_mi': 'AFDFDCD8F88E17BEB603BE00A0E1A837~YAAQFf7UF1rYhtGTAQAAMnGwLRpKvQA+p/M2wzz5cF/u//5z+AiKOGooDQQQnDqXxEAxCrwqN7r7ZHg+H6g/GqHEt3wGyPwDgEo/3sTv5ZbMwSWb9Wu7bG2cVm9r4PnJhEmM0Yplci9Vi98dlnU77vVWxxIATUr2Uqk9v+7Dic5dDqPSfrPLx1Ob5krcQ0Mqt0Qf4p5f+50mnpaxu9Bf1B2HEiCpEMXdXGEIbn07/ybEuo39SLIHEWCnpjJ+vkgRH/JaJxAU4NcsMjDLHgGRBg2804v79a01O4/SIwU8U3QWUMiCa2KNaFuEwHijEgoDwW1GWP96RLZP010WM9dTP6/uivEMcg1ARfr3nptZtA==~1',
-    'bm_sz': '5A487D87FDDAD99E426686269A54E1A5~YAAQFf7UF1zYhtGTAQAAMnGwLRpkJr+zjEYqP6hLIQsOja6wR1O92rsmQ4IHJBSAoNAQFO15RaxGuwo/X6jc3C8uYWHzxQWSxUIkxqWsB4DQ1ElMznUXpp0EsrYhHs7KvoZ7tjQuu8T+1sPwRE0Q6gD0jg8wy/Vl8bsrLeYojezJbkkOPgVhDUJpmNn6JZo/VsWXLkC7EjC3wyj2sxpm+9oR0xYUSPevVz6a3vZxGwiITYWxk3nSj2cpAALxJkC3Fxzd7+uFb0uBtj9WGFfuZSwmK/LcZbBATLTm5zOmyF5ZYX7N5xSkP0rt2yefk70TqjAf3lmc+FcIhmYQiZhLWtActTpTMGPDNHhC0dK9sjZ3b+TyxphmM1yky+a6L7GWmZgf9dUQt/8xkInsWy5D1ih1jRE=~4535605~4338738',
-    '_abck': '07B1F1F995ACFC756B5CE515B94E43DF~0~YAAQFf7UF+zYhtGTAQAA9YKwLQ3k942YUr6S14R+dCXdA5dormCivz5sfecVA7mD7JJ/MxyONUOjQUgSb6vBqfkv0QWYCf2barybjRt3DJTWBlj94+/UD4nclZp6z7ssJyIxYVDJ5S04TM07h9x/k03Hm2E9LDoEvdYYAmtRwjW0AiIWO4E51JCCENPd3qOvhqxQu3IE7mfsmn/P5En3rK4S8AJaKJNURa5m1sSHy+mCwV1YwdUENBOmZ/1HXrw2aM58uxkVFQaYD7rY9vt98XzaNfCdEMbetTQpEzafL1FLOFQRC01ScWPqtPGrTg0LcJggpyErg4mo7Oqatc/Xt9If3fI4bZ6J0pDtLAZ8HF9Kb+d18hXa2Rigrtt7yPjCVkTek2U/8wJjp67X1sv8RnYIqC9WcfUaDlOmlaQlh4SI+QwNUomM1eIZuJP1Z9pN7ZitHyl85RIe6M8mtFbAAGle1KerDysJHAFsLVQZmcV+b7cxahczZsiZF3vlgMAT6w==~-1~||0||~-1',
-    'bm_sv': 'B87BFA33D08467F49BC911B882C0BB93~YAAQL3LBF3ZTZumTAQAAIKiwLRpm8EsOGqx0PE6TAwoAzmgXVns6crDpZZkQa/vnb+2TUXbaQ52pgN4Fw5KRQcTZcRt4cb6xHR2Gd5UyUXvBCSwFc+/JBAqRStJPmcFRdSUYMCLfnb/rG7JUJNbi4Ku0kepq7BOz6/yyMOxam19G0DZReit4sGKQHOL3hhGM83odNb2VP90Z7oSFJCETShrgLW6p1bzWMCtfCiVC1xEo8oC27Yh4KzGnPZsc+OLpm8sl~1',
-    'ak_bmsc': 'FBEBC972FE720F65011D243F87D79872~000000000000000000000000000000~YAAQFf7UFxjahtGTAQAAhbGwLRpQUwfEaOyY0Gq3K3LNx6Y6E/YVLl1jFxwNgcu4phhSLTJfaatZsavLFUMu8shYHI2d5V4l2+AyMCw1ZmrlqeGFIOi+GxGBSgKbay0R2Awk/0Y7d3xTsrdFVcXYiFsVi/1mJ1AAPABhaeULM4Nop4hW62kEQxmsH7kMrvtFtPAtWWkk2d+h3IXX+BXef2PDtSWtOMfmXqWbox/Oh0ux5ELcfQfsaP+ps+3jYZzCATpHG+EUQ+aT9JUeC4F5C3+40GfBXqn1UiLw1o2+GtwD6+ge9lVWp/aGq6RxFtNv6Hx/Fu3ztbWAvqgyyNrEmwlhxdm/dxFtuLfIyMTIZhBpnpogGryQkw7CUud70I+9FH3TQTdY7n73IYZ6qsL9/C9FNyHnP4wTZeowbyQsTeQfDszInZHR6G0SLFvBogVKHMZDrLW65pfIrveC5nJo',
-    }
+    # headers = generate_headers(random.choices(user_agents))
+    # headers['accept'] = 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7'
+    # headers['origin'] = 'https://www.moneycontrol.com/'
     headers = {
-    'accept': '*/*',
-    'accept-language': 'en-US,en;q=0.9',
-    # 'cookie': 'defaultLang=en; nsit=hJ0HH5iOKS52RjxAKrHWBBnw; AKA_A2=A; nseappid=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJhcGkubnNlIiwiYXVkIjoiYXBpLm5zZSIsImlhdCI6MTczNTkzMzMyNSwiZXhwIjoxNzM1OTQwNTI1fQ.Y2hqAEe3pLhHcj-wjhtmjvJTdRyVIl5MdfTJeqhIB_4; bm_mi=AFDFDCD8F88E17BEB603BE00A0E1A837~YAAQFf7UF1rYhtGTAQAAMnGwLRpKvQA+p/M2wzz5cF/u//5z+AiKOGooDQQQnDqXxEAxCrwqN7r7ZHg+H6g/GqHEt3wGyPwDgEo/3sTv5ZbMwSWb9Wu7bG2cVm9r4PnJhEmM0Yplci9Vi98dlnU77vVWxxIATUr2Uqk9v+7Dic5dDqPSfrPLx1Ob5krcQ0Mqt0Qf4p5f+50mnpaxu9Bf1B2HEiCpEMXdXGEIbn07/ybEuo39SLIHEWCnpjJ+vkgRH/JaJxAU4NcsMjDLHgGRBg2804v79a01O4/SIwU8U3QWUMiCa2KNaFuEwHijEgoDwW1GWP96RLZP010WM9dTP6/uivEMcg1ARfr3nptZtA==~1; bm_sz=5A487D87FDDAD99E426686269A54E1A5~YAAQFf7UF1zYhtGTAQAAMnGwLRpkJr+zjEYqP6hLIQsOja6wR1O92rsmQ4IHJBSAoNAQFO15RaxGuwo/X6jc3C8uYWHzxQWSxUIkxqWsB4DQ1ElMznUXpp0EsrYhHs7KvoZ7tjQuu8T+1sPwRE0Q6gD0jg8wy/Vl8bsrLeYojezJbkkOPgVhDUJpmNn6JZo/VsWXLkC7EjC3wyj2sxpm+9oR0xYUSPevVz6a3vZxGwiITYWxk3nSj2cpAALxJkC3Fxzd7+uFb0uBtj9WGFfuZSwmK/LcZbBATLTm5zOmyF5ZYX7N5xSkP0rt2yefk70TqjAf3lmc+FcIhmYQiZhLWtActTpTMGPDNHhC0dK9sjZ3b+TyxphmM1yky+a6L7GWmZgf9dUQt/8xkInsWy5D1ih1jRE=~4535605~4338738; _abck=07B1F1F995ACFC756B5CE515B94E43DF~0~YAAQFf7UF+zYhtGTAQAA9YKwLQ3k942YUr6S14R+dCXdA5dormCivz5sfecVA7mD7JJ/MxyONUOjQUgSb6vBqfkv0QWYCf2barybjRt3DJTWBlj94+/UD4nclZp6z7ssJyIxYVDJ5S04TM07h9x/k03Hm2E9LDoEvdYYAmtRwjW0AiIWO4E51JCCENPd3qOvhqxQu3IE7mfsmn/P5En3rK4S8AJaKJNURa5m1sSHy+mCwV1YwdUENBOmZ/1HXrw2aM58uxkVFQaYD7rY9vt98XzaNfCdEMbetTQpEzafL1FLOFQRC01ScWPqtPGrTg0LcJggpyErg4mo7Oqatc/Xt9If3fI4bZ6J0pDtLAZ8HF9Kb+d18hXa2Rigrtt7yPjCVkTek2U/8wJjp67X1sv8RnYIqC9WcfUaDlOmlaQlh4SI+QwNUomM1eIZuJP1Z9pN7ZitHyl85RIe6M8mtFbAAGle1KerDysJHAFsLVQZmcV+b7cxahczZsiZF3vlgMAT6w==~-1~||0||~-1; bm_sv=B87BFA33D08467F49BC911B882C0BB93~YAAQL3LBF3ZTZumTAQAAIKiwLRpm8EsOGqx0PE6TAwoAzmgXVns6crDpZZkQa/vnb+2TUXbaQ52pgN4Fw5KRQcTZcRt4cb6xHR2Gd5UyUXvBCSwFc+/JBAqRStJPmcFRdSUYMCLfnb/rG7JUJNbi4Ku0kepq7BOz6/yyMOxam19G0DZReit4sGKQHOL3hhGM83odNb2VP90Z7oSFJCETShrgLW6p1bzWMCtfCiVC1xEo8oC27Yh4KzGnPZsc+OLpm8sl~1; ak_bmsc=FBEBC972FE720F65011D243F87D79872~000000000000000000000000000000~YAAQFf7UFxjahtGTAQAAhbGwLRpQUwfEaOyY0Gq3K3LNx6Y6E/YVLl1jFxwNgcu4phhSLTJfaatZsavLFUMu8shYHI2d5V4l2+AyMCw1ZmrlqeGFIOi+GxGBSgKbay0R2Awk/0Y7d3xTsrdFVcXYiFsVi/1mJ1AAPABhaeULM4Nop4hW62kEQxmsH7kMrvtFtPAtWWkk2d+h3IXX+BXef2PDtSWtOMfmXqWbox/Oh0ux5ELcfQfsaP+ps+3jYZzCATpHG+EUQ+aT9JUeC4F5C3+40GfBXqn1UiLw1o2+GtwD6+ge9lVWp/aGq6RxFtNv6Hx/Fu3ztbWAvqgyyNrEmwlhxdm/dxFtuLfIyMTIZhBpnpogGryQkw7CUud70I+9FH3TQTdY7n73IYZ6qsL9/C9FNyHnP4wTZeowbyQsTeQfDszInZHR6G0SLFvBogVKHMZDrLW65pfIrveC5nJo',
-    'priority': 'u=1, i',
-    'referer': 'https://www.nseindia.com/market-data/live-market-indices',
-    'sec-ch-ua': '"Chromium";v="130", "Opera GX";v="115", "Not?A_Brand";v="99"',
-    'sec-ch-ua-mobile': '?0',
-    'sec-ch-ua-platform': '"Windows"',
-    'sec-fetch-dest': 'empty',
-    'sec-fetch-mode': 'cors',
-    'sec-fetch-site': 'same-origin',
-    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 OPR/115.0.0.0',
+        'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+        'accept-language': 'en-US,en;q=0.9',
+        'cache-control': 'max-age=0',
+        'priority': 'u=0, i',
+        'sec-ch-ua': '"Chromium";v="130", "Opera GX";v="115", "Not?A_Brand";v="99"',
+        'sec-ch-ua-mobile': '?0',
+        'sec-ch-ua-platform': '"Windows"',
+        'sec-fetch-dest': 'document',
+        'sec-fetch-mode': 'navigate',
+        'sec-fetch-site': 'none',
+        'sec-fetch-user': '?1',
+        'upgrade-insecure-requests': '1',
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.6723.170 Safari/537.36',
     }
-    response = httpx.get('https://www.nseindia.com/api/allIndices', headers=headers, cookies=cookies, verify=False)
-    print(response.text)
-    return response.json()
+    params = {
+        'deviceType': 'web',
+        'exName': 'N',
+        'indicesID': '23',
+        'selTab': 'o',
+        'subTabOT': 'o',
+        'subTabOPL': 'cl',
+    }
+    # print(headers)
+    
+    
+    response = httpx.get(
+        'https://www.moneycontrol.com/markets/indian-indices/changeTableData',params=params,
+        headers=headers,verify=False
+    )
+    soup = BeautifulSoup(response.text, "html.parser")
+    table = soup.find("table", {"class": "tbl_indices"})
+    if table:
+        # Extract table headers
+        headers = [th.text.strip() for th in table.find("thead").find_all("th")]
+        data = []
+        # Extract table rows
+        for index_type in ["Key Indices", "Sectoral Indices", "Other Indices"]:
+            rows = table.find("tbody").find_all("tr", {"data-type": index_type})
+            
+
+            for row in rows:
+                cells = row.find_all("td")
+                row_data = {headers[i]: cells[i].text.strip() for i in range(len(cells))}
+                data.append(row_data)
+
+        # Convert the extracted data to JSON
+        # json_data = json.dumps(data, indent=4)
+    return data
