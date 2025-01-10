@@ -44,4 +44,18 @@ async def get_indices(symbol:str,
         
 @router.get("/nse_indices")
 async def fetch_nse_indices(symbol:str):
-    return get_nse_indices()
+    data = get_nse_indices()
+    if symbol=="all":
+        return data
+    matches = []
+    for item in data:                
+        if item['Name'].lower().replace(" ","") == symbol.lower().replace(" ",""):
+            return item
+        if ":" in symbol:
+            symbols = symbol.split(":")
+            for sym in symbols:
+                if item['Name'].lower().replace(" ","") == sym.lower().replace(" ",""):
+                    matches.append(item)
+        return matches
+
+            
