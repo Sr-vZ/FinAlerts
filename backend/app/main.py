@@ -48,6 +48,7 @@ app.add_middleware(
 # env = jinja2.Environment(loader=PackageLoader("./../../ui"))
 app_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
 templates = Jinja2Templates(directory=f"{app_root}/ui")
+app.mount("/static", StaticFiles(directory=f"{app_root}/ui"), name="static")
 # templates = env.get_template()
 # templates = Jinja2Templates(directory=Path(__file__).parent.parent+ "ui/")
 

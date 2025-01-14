@@ -13,3 +13,11 @@
 //     });
 // });
 
+async function index_ticker(symbol) {
+    // document.getElementById("index-ticker")
+    res = await fetch("nse_indices?symbol=" + symbol)
+    data = await res.json()
+    console.log(data)
+    document.getElementById("index-ticker").querySelector('.stat-value').innerHTML = data['LTP']
+    document.getElementById("index-ticker").querySelector('.stat-title').innerHTML = data['Name']
+}
