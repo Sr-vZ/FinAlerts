@@ -212,10 +212,10 @@ def get_scrip_code(symbol=None):
     # print(df[df['TradingSymbol'] == "NIFTY 50"])
     # print(df[df['TradingSymbol'] == symbol]['ScripCode'])
     symbol = symbol.upper()
-    # print(symbol)
+    print(symbol)
     # print(df)
-    # print(difflib.get_close_matches(symbol,df['Description'],n=1))
-    closest_match = difflib.get_close_matches(symbol,df['Description'],n=1, cutoff=0.75)[0]
+    print(difflib.get_close_matches(symbol,df['Description'],n=1))
+    closest_match = difflib.get_close_matches(symbol,df['Description'],n=1, cutoff=0.60)[0]
     # print(symbol, closest_match)
     # if df[df['TradingSymbol'] == symbol]['ScripCode'].item() == None:
     #     if len(closest_match) > 0:

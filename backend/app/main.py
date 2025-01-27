@@ -11,6 +11,7 @@
 
 # main.py
 import uvicorn
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Depends, HTTPException, Cookie
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -27,7 +28,14 @@ from .routers import indices
 
 from .database import init_tables
 
-app = FastAPI(debug=True)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_tables()
+    yield
+    
+
+app = FastAPI(debug=True, lifespan=lifespan)
 
 origins = [
     "http://localhost:5174",
@@ -95,6 +103,8 @@ async def create_auth_header(
     
     response = await call_next(request)
     return response    
+
+
 
 
 @app.get("/", response_class=HTMLResponse)
