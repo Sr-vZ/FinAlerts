@@ -67,7 +67,7 @@ def get_relevant_nse_indices() -> list:
         "NIFTY PSU BANK",
         "NIFTY REALTY",
         "NIFTY PRIVATE BANK",
-        "NIFTY HEALTHCARE INDEX",
+        "NIFTY HEALTHCARE",
         "NIFTY CONSUMER DURABLES",
         "NIFTY OIL & GAS",
         "NIFTY MIDSMALL HEALTHCARE",
